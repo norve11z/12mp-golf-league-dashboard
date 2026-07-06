@@ -1,0 +1,33 @@
+<h2>Next Week's Matchups</h2>
+<div id="nextWeek">Loading...</div>
+
+<script>
+window.UpcomingPanel = {
+  refresh() {
+    return this._load();
+  },
+  async _load() {
+    try {
+      const res = await fetch(URLS.nextWeek + '&_=' + Date.now());
+      const text = await res.text();
+      document.getElementById('nextWeek').innerHTML = this._build(parseCSV(text));
+    } catch(e) {
+      document.getElementById('nextWeek').innerHTML = 'Error loading: ' + e.message;
+    }
+  },
+  _build(rows) {
+    if (!rows.length) return '<p>No data</p>';
+    let html = '<table><tbody>';
+    rows.forEach(row => {
+      if (isBlankRow(row)) {
+        html += '<tr class="spacer"><td colspan="' + row.length + '"></td></tr>';
+      } else {
+        html += '<tr>';
+        row.map(clean).forEach(c => html += '<td>' + c + '</td>');
+        html += '</tr>';
+      }
+    });
+    return html + '</tbody></table>';
+  }
+};
+</script>

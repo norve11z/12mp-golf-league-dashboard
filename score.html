@@ -3,97 +3,70 @@
 <head>
 <title>Minigolf League</title>
 <style>
-  /* ===== GLOBAL LAYOUT & SHARED STYLES ===== */
+  /* ===== GLOBAL LAYOUT ===== */
   body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #1a3d2e; color: #fff; }
-  .container { display: grid; grid-template-columns: 1.25fr 1fr; gap: 15px; padding: 15px; height: 100vh; box-sizing: border-box; }
+  .container { display: grid; grid-template-columns: 1.25fr 1fr; gap: 15px;
+               padding: 15px; height: 100vh; box-sizing: border-box; }
   .left { background: #2d5a3d; border-radius: 10px; padding: 25px; overflow: auto; }
   .right { display: grid; grid-template-rows: 1fr 1.3fr; gap: 15px; }
   .module { background: #2d5a3d; border-radius: 10px; padding: 25px; overflow: auto; position: relative; }
-  h2 { margin-top: 0; font-size: 28px; border-bottom: 3px solid #7cb342; padding-bottom: 10px; letter-spacing: 1px; }
-  table { width: 100%; border-collapse: collapse; font-size: 20px; }
-  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #4a7a5a; }
-  th { background: #14301f; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: #b5d9a0; }
-  tbody tr:hover { background: #3a6a4d; }
-  td:first-child { font-weight: bold; font-size: 22px; color: #ffe082; }
-  .spacer td { border: none; padding: 5px; }
-  .refresh { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px;
-             background: #7cb342; color: white; border: none; border-radius: 5px;
-             cursor: pointer; font-size: 16px; font-weight: bold; z-index: 100; }
-  .refresh:hover { background: #8bc34a; }
+  h2 { margin-top: 0; font-size: 28px; border-bottom: 3px solid #7cb342;
+       padding-bottom: 10px; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="left" id="standings-panel">Loading...</div>
+  <div class="left"  id="standings-panel">Loading standings...</div>
   <div class="right">
-    <div class="module" id="upcoming-panel">Loading...</div>
-    <div class="module" id="scoring-panel">Loading...</div>
+    <div class="module" id="upcoming-panel"><h2>Upcoming Matches</h2><p>Coming soon...</p></div>
+    <div class="module" id="scoring-panel"><h2>Live Scoreboard</h2><p>Coming soon...</p></div>
   </div>
 </div>
-<button class="refresh" onclick="loadAll()">Refresh</button>
 
 <script>
-/* ===== SHARED STATE & CONFIG ===== */
-const URLS = {
-  standings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=0&single=true&output=csv',
-  nextWeek:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=922131074&single=true&output=csv',
-  currentWeek: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=652571751&single=true&output=csv'
-};
-let playerList = [];
+/* ===== API CONFIG ===== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6FiPS3jaIKs9lD0TIHkMskdPjFfUvH4siagSjB8kuWLBxoy8JbH1EYL1sy_8nanlA/exec';
+const API_TOKEN = '12MP67';
 
-/* ===== SHARED HELPERS ===== */
-function parseCSV(text) {
-  const rows = [];
-  const lines = text.trim().split(/\r?\n/);
-  for (const line of lines) {
-    const cells = [];
-    let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
-      else if (c === '"') inQ = !inQ;
-      else if (c === ',' && !inQ) { cells.push(cur); cur = ''; }
-      else cur += c;
-    }
-    cells.push(cur);
-    rows.push(cells.map(c => c.trim()));
-  }
-  return rows;
+/* ===== API HELPER ===== */
+async function apiGet(action, extra = {}) {
+  const params = new URLSearchParams({ action, token: API_TOKEN, ...extra });
+  const res = await fetch(`${API_URL}?${params}`);
+  return res.json();
 }
-function clean(s) { return (s || '').replace(/\*\*/g, '').trim(); }
-function isBlankRow(row) { return row.every(c => !clean(c)); }
+
+async function apiPost(action, payload = {}) {
+  const body = JSON.stringify({ action, token: API_TOKEN, ...payload });
+  const res = await fetch(API_URL, { method: 'POST', body });
+  return res.json();
+}
 
 /* ===== PANEL LOADER ===== */
 async function loadPanel(url, containerId) {
   const html = await fetch(url).then(r => r.text());
-  document.getElementById(containerId).innerHTML = html;
-  // Re-execute any <script> tags inside the loaded HTML
-  document.getElementById(containerId).querySelectorAll('script').forEach(s => {
+  const container = document.getElementById(containerId);
+  container.innerHTML = html;
+  // Re-execute inline <script> tags
+  container.querySelectorAll('script').forEach(s => {
     const newScript = document.createElement('script');
-    if (s.src) newScript.src = s.src;
-    else newScript.textContent = s.textContent;
+    newScript.textContent = s.textContent;
     document.body.appendChild(newScript);
   });
 }
 
-/* ===== ORCHESTRATION ===== */
-async function loadAll() {
+/* ===== BOOT ===== */
+(async function boot() {
+  await loadPanel('standings.html', 'standings-panel');
+  // (upcoming and scoring panels will be added later)
+  setTimeout(() => {
+    if (window.StandingsPanel) StandingsPanel.refresh();
+  }, 50);
+})();
+
+/* ===== 30-SECOND POLLING REFRESH ===== */
+setInterval(() => {
   if (window.StandingsPanel) StandingsPanel.refresh();
-  if (window.UpcomingPanel)  UpcomingPanel.refresh();
-}
-
-async function boot() {
-  await Promise.all([
-    loadPanel('standings.html', 'standings-panel'),
-    loadPanel('upcoming.html',  'upcoming-panel'),
-    loadPanel('scoring.html',   'scoring-panel')
-  ]);
-  // Small delay to let inline scripts register their panel objects
-  setTimeout(loadAll, 50);
-}
-
-boot();
-setInterval(loadAll, 60000);
+}, 30000);
 </script>
 </body>
 </html>

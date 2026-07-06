@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Minigolf Live Scoreboard</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #1a3d2e; color: #fff;
+         height: 100vh; overflow: hidden; }
+  #scoreboardModule { padding: 50px; height: 100vh; box-sizing: border-box;
+                      display: flex; flex-direction: column; }
+  h2 { margin-top: 0; font-size: 48px; border-bottom: 3px solid #7cb342;
+       padding-bottom: 15px; letter-spacing: 2px;
+       display: flex; justify-content: space-between; align-items: center; }
+  .sb-controls { display: flex; gap: 15px; margin-bottom: 30px; }
+  .sb-controls select { background: #14301f; color: #ffe082; border: 2px solid #7cb342;
+                        padding: 12px; font-size: 22px; border-radius: 5px; flex: 1;
+                        font-weight: bold; }
+  .sb-btn { background: #7cb342; color: white; border: none; padding: 12px 20px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 18px; }
+  .sb-btn:hover { background: #8bc34a; }
+  .sb-board { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr;
+              gap: 20px; align-items: center; justify-items: center; }
+  .sb-side { display: flex; flex-direction: column; align-items: center; gap: 20px;
+             padding: 10px; border-radius: 10px; transition: all 0.3s;
+             width: 80%; position: relative; }
+  .sb-side.leader { box-shadow: 0 0 25px 5px rgba(124, 179, 66, 0.6); }
+  .sb-side.tied { background: rgba(255, 235, 59, 0.15); }
+  .sb-side.at-bat::before { content: ''; position: absolute; top: 50%; left: -40px;
+                            transform: translateY(-50%); width: 0; height: 0;
+                            border-top: 24px solid transparent; border-bottom: 24px solid transparent;
+                            border-left: 36px solid #ffe082; }
+  .sb-name { font-size: 80px; font-weight: bold; color: #ffe082;
+             text-transform: uppercase; letter-spacing: 4px; min-height: 90px;
+             text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5); }
+  .sb-arrow { background: transparent; border: 1px solid rgba(255,255,255,0.2);
+              color: rgba(255,255,255,0.4); width: 200px; height: 120px;
+              cursor: pointer; border-radius: 6px; font-size: 28px; transition: all 0.2s; }
+  .sb-arrow:hover { color: white; border-color: #7cb342; background: rgba(124,179,66,0.2); }
+  .flip-wrap { display: flex; gap: 10px; }
+  .flip-card { perspective: 800px; width: 220px; height: 320px; }
+  .flip-inner { position: relative; width: 100%; height: 100%;
+                transform-style: preserve-3d; transition: transform 0.6s; }
+  .flip-inner.flipping { transform: rotateX(-180deg); }
+  .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+               background: linear-gradient(180deg, #0d1f14 0%, #14301f 50%, #0d1f14 100%);
+               border-radius: 8px; display: flex; align-items: center; justify-content: center;
+               font-size: 240px; font-weight: bold; color: #ffe082;
+               font-family: 'Courier New', monospace;
+               box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.5);
+               border: 2px solid #4a7a5a; }
+  .flip-face.back { transform: rotateX(180deg); }
+  .flip-face::before { content: ''; position: absolute; left: 0; right: 0;
+                       height: 2px; background: rgba(0,0,0,0.7); top: 50%; }
+  .sb-vs { font-size: 100px; font-weight: bold; color: #7cb342; }
+  .sb-footer { display: flex; gap: 30px; margin-top: 40px;
+               justify-content: center; align-items: center; flex-wrap: wrap; }
+  .innings-box { display: flex; align-items: center; gap: 30px;
+                 background: #14301f; padding: 25px 45px; border-radius: 8px;
+                 border: 2px solid #7cb342; }
+  .innings-label { font-size: 36px; color: #b5d9a0; text-transform: uppercase;
+                   letter-spacing: 2px; font-weight: bold; }
+  .innings-display { display: flex; flex-direction: column; align-items: center; gap: 4px;
+                     min-width: 150px; }
+  .innings-half { display: flex; align-items: center; gap: 15px; font-size: 36px;
+                  color: #ffe082; font-weight: bold; font-family: 'Courier New', monospace; }
+  .half-arrow { font-size: 32px; color: #4a7a5a; transition: color 0.2s; }
+  .half-arrow.active { color: #ffe082; text-shadow: 0 0 8px #ffe082; }
+  .innings-number { font-size: 72px; color: #ffe082; font-weight: bold;
+                    font-family: 'Courier New', monospace; }
+  .innings-btn { background: #7cb342; color: white; border: none; width: 80px; height: 80px;
+                 border-radius: 5px; cursor: pointer; font-size: 40px; font-weight: bold; }
+  .innings-btn:hover { background: #8bc34a; }
+</style>
+</head>
+<body>
+<div id="scoreboardModule">
+  <h2>
+    <span>Live Scoreboard</span>
+    <button class="sb-btn" onclick="window.close()">Exit Fullscreen</button>
+  </h2>
+  <div class="sb-controls">
+    <select id="p1Select" onchange="onPlayerChange()"><option value="">-- Player 1 --</option></select>
+    <select id="p2Select" onchange="onPlayerChange()"><option value="">-- Player 2 --</option></select>
+  </div>
+  <div class="sb-board">
+    <div class="sb-side" id="side1">
+      <div class="sb-name" id="name1"></div>
+      <button class="sb-arrow" onclick="changeScore(1, 1)">+</button>
+      <div class="flip-wrap">
+        <div class="flip-card"><div class="flip-inner" id="flip1t">
+          <div class="flip-face front" id="face1tfront">0</div>
+          <div class="flip-face back" id="face1tback">0</div>
+        </div></div>
+        <div class="flip-card"><div class="flip-inner" id="flip1o">
+          <div class="flip-face front" id="face1ofront">0</div>
+          <div class="flip-face back" id="face1oback">0</div>
+        </div></div>
+      </div>
+      <button class="sb-arrow" onclick="changeScore(1, -1)">-</button>
+    </div>
+    <div class="sb-vs">VS</div>
+    <div class="sb-side" id="side2">
+      <div class="sb-name" id="name2"></div>
+      <button class="sb-arrow" onclick="changeScore(2, 1)">+</button>
+      <div class="flip-wrap">
+        <div class="flip-card"><div class="flip-inner" id="flip2t">
+          <div class="flip-face front" id="face2tfront">0</div>
+          <div class="flip-face back" id="face2tback">0</div>
+        </div></div>
+        <div class="flip-card"><div class="flip-inner" id="flip2o">
+          <div class="flip-face front" id="face2ofront">0</div>
+          <div class="flip-face back" id="face2oback">0</div>
+        </div></div>
+      </div>
+      <button class="sb-arrow" onclick="changeScore(2, -1)">-</button>
+    </div>
+  </div>
+  <div class="sb-footer">
+    <div class="innings-box">
+      <span class="innings-label">Inning</span>
+      <button class="innings-btn" onclick="changeInning(-1)">-</button>
+      <div class="innings-display">
+        <div class="innings-half">
+          <span class="half-arrow" id="arrowTop">TOP</span>
+          <span class="innings-number" id="inningNumber">1</span>
+          <span class="half-arrow" id="arrowBot">BOT</span>
+        </div>
+      </div>
+      <button class="innings-btn" onclick="changeInning(1)">+</button>
+    </div>
+    <button class="sb-btn" onclick="resetScores()">Reset</button>
+  </div>
+</div>
+
+<script>
+/* Fullscreen page uses same localStorage state as the embedded scoring panel,
+   so both stay in sync. Open this in a new tab/window and it picks up
+   whatever the kiosk is currently doing. */
+let scores = { p1: 0, p2: 0 };
+let players = { p1: '', p2: '' };
+let halfIndex = 0;
+
+function onPlayerChange() {
+  players.p1 = document.getElementById('p1Select').value;
+  players.p2 = document.getElementById('p2Select').value;
+  document.getElementById('name1').textContent = players.p1 || 'P1';
+  document.getElementById('name2').textContent = players.p2 || 'P2';
+  updateLeader();
+  updateInningDisplay();
+  saveState();
+}
+
+function flipDigit(id, newDigit) {
+  const inner = document.getElementById(id);
+  const front = document.getElementById(id.replace('flip','face') + 'front');
+  const back  = document.getElementById(id.replace('flip','face') + 'back');
+  if (front.textContent == newDigit) return;
+  back.textContent = newDigit;
+  inner.classList.add('flipping');
+  setTimeout(() => {
+    front.textContent = newDigit;
+    inner.classList.remove('flipping');
+  }, 600);
+}
+
+function flipTo(side, newVal) {
+  const padded = String(Math.min(99, Math.max(0, newVal))).padStart(2, '0');
+  flipDigit('flip' + side + 't', padded[0]);
+  flipDigit('flip' + side + 'o', padded[1]);
+}
+
+function changeScore(side, delta) {
+  const key = 'p' + side;
+  const newVal = Math.max(0, scores[key] + delta);
+  if (newVal === scores[key]) return;
+  scores[key] = newVal;
+  flipTo(side, newVal);
+  updateLeader();
+  saveState();
+}
+
+function changeInning(delta) {
+  const newVal = Math.max(0, halfIndex + delta);
+  if (newVal === halfIndex) return;
+  halfIndex = newVal;
+  updateInningDisplay();
+  saveState();
+}
+
+function updateInningDisplay() {
+  const inningNum = Math.floor(halfIndex / 2) + 1;
+  const isTop = (halfIndex % 2) === 0;
+  document.getElementById('inningNumber').textContent = inningNum;
+  document.getElementById('arrowTop').classList.toggle('active', isTop);
+  document.getElementById('arrowBot').classList.toggle('active', !isTop);
+  const s1 = document.getElementById('side1');
+  const s2 = document.getElementById('side2');
+  s1.classList.remove('at-bat');
+  s2.classList.remove('at-bat');
+  if (players.p1 && players.p2) {
+    if (isTop) s1.classList.add('at-bat');
+    else s2.classList.add('at-bat');
+  }
+}
+
+function updateLeader() {
+  const s1 = document.getElementById('side1');
+  const s2 = document.getElementById('side2');
+  s1.classList.remove('leader','tied');
+  s2.classList.remove('leader','tied');
+  if (!players.p1 || !players.p2) return;
+  if (scores.p1 > scores.p2) s1.classList.add('leader');
+  else if (scores.p2 > scores.p1) s2.classList.add('leader');
+  else if (scores.p1 > 0 || scores.p2 > 0) {
+    s1.classList.add('tied'); s2.classList.add('tied');
+  }
+}
+
+function resetScores() {
+  scores.p1 = 0; scores.p2 = 0;
+  halfIndex = 0;
+  flipTo(1, 0); flipTo(2, 0);
+  updateInningDisplay();
+  updateLeader();
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem('minigolfState', JSON.stringify({ scores, players, halfIndex }));
+}
+
+function setDigits(side, val) {
+  const padded = String(Math.min(99, Math.max(0, val))).padStart(2, '0');
+  document.getElementById('face' + side + 'tfront').textContent = padded[0];
+  document.getElementById('face' + side + 'tback').textContent  = padded[0];
+  document.getElementById('face' + side + 'ofront').textContent = padded[1];
+  document.getElementById('face' + side + 'oback').textContent  = padded[1];
+}
+
+function loadState() {
+  const raw = localStorage.getItem('minigolfState');
+  if (!raw) return;
+  try {
+    const st = JSON.parse(raw);
+    scores = st.scores || { p1:0, p2:0 };
+    players = st.players || { p1:'', p2:'' };
+    halfIndex = typeof st.halfIndex === 'number' ? st.halfIndex : 0;
+    if (players.p1) document.getElementById('p1Select').value = players.p1;
+    if (players.p2) document.getElementById('p2Select').value = players.p2;
+    document.getElementById('name1').textContent = players.p1 || 'P1';
+    document.getElementById('name2').textContent = players.p2 || 'P2';
+    setDigits(1, scores.p1);
+    setDigits(2, scores.p2);
+    updateInningDisplay();
+    updateLeader();
+  } catch(e) {}
+}
+
+// Refresh state periodically in case the kiosk changes it
+loadState();
+setInterval(loadState, 2000);
+
+// Also refresh instantly when tab regains focus
+window.addEventListener('focus', loadState);
+</script>
+</body>
+</html>

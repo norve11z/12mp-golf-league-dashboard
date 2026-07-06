@@ -1,0 +1,317 @@
+<style>
+  /* ===== STANDINGS TABLE ===== */
+  .standings-table { width: 100%; border-collapse: collapse; font-size: 20px; }
+  .standings-table th, .standings-table td {
+    padding: 10px 12px; text-align: left; border-bottom: 1px solid #4a7a5a;
+  }
+  .standings-table th {
+    background: #14301f; font-size: 14px; text-transform: uppercase;
+    letter-spacing: 1px; color: #b5d9a0; font-weight: bold;
+  }
+  .standings-table tbody tr { cursor: pointer; transition: background 0.15s; }
+  .standings-table tbody tr:hover { background: #3a6a4d; }
+  .standings-table td:first-child {
+    font-weight: bold; font-size: 22px; color: #ffe082;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .standings-table td.record { font-family: 'Courier New', monospace; font-weight: bold; }
+  .standings-table td.numeric { font-family: 'Courier New', monospace; text-align: right; }
+
+  .week-header {
+    background: #14301f; text-align: center; font-size: 26px;
+    font-weight: bold; color: #7cb342; letter-spacing: 3px; padding: 15px !important;
+  }
+
+  /* Playoff cutoff visual */
+  .cutoff-row td {
+    background: #b71c1c; text-align: center; color: white;
+    font-weight: bold; letter-spacing: 2px; font-size: 16px; padding: 8px !important;
+  }
+  .out-of-playoffs { background: rgba(0,0,0,0.15); }
+  .out-of-playoffs td:first-child { color: #b5b5b5; }
+
+  /* ===== PLAYER DETAIL MODAL ===== */
+  .modal-backdrop {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.75); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #2d5a3d; border-radius: 12px; padding: 30px;
+    max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 0 40px rgba(124, 179, 66, 0.4);
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 12px; right: 16px; background: none; border: none;
+    color: #fff; font-size: 28px; cursor: pointer; line-height: 1;
+  }
+  .modal-close:hover { color: #ffe082; }
+  .modal h3 { margin: 0 0 6px 0; font-size: 36px; color: #ffe082;
+              text-transform: uppercase; letter-spacing: 3px; }
+  .modal .rank { color: #7cb342; font-weight: bold; }
+  .modal .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin: 20px 0;
+  }
+  .stat-box { background: #14301f; padding: 12px; border-radius: 8px;
+              border: 1px solid #4a7a5a; text-align: center; }
+  .stat-box .label { font-size: 12px; text-transform: uppercase;
+                     color: #b5d9a0; letter-spacing: 1px; }
+  .stat-box .value { font-size: 24px; font-weight: bold; color: #ffe082;
+                     font-family: 'Courier New', monospace; margin-top: 4px; }
+  .modal h4 { color: #b5d9a0; font-size: 18px; text-transform: uppercase;
+              letter-spacing: 2px; border-bottom: 2px solid #4a7a5a;
+              padding-bottom: 6px; margin-top: 24px; }
+  .match-list, .h2h-list { list-style: none; padding: 0; margin: 0; }
+  .match-list li, .h2h-list li {
+    padding: 8px 10px; border-bottom: 1px solid #4a7a5a;
+    display: grid; grid-template-columns: 60px 1fr auto auto; gap: 12px;
+    align-items: center; font-size: 16px;
+  }
+  .match-list .w { color: #7cb342; font-weight: bold; }
+  .match-list .l { color: #ef5350; font-weight: bold; }
+  .match-list .t { color: #ffe082; font-weight: bold; }
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 12px;
+           font-size: 12px; font-weight: bold; text-transform: uppercase;
+           letter-spacing: 1px; }
+  .badge.in { background: #7cb342; color: white; }
+  .badge.out { background: #b71c1c; color: white; }
+</style>
+
+<h2>Current Standings</h2>
+<div id="standings-content">Loading...</div>
+
+<!-- Player detail modal (hidden until row clicked) -->
+<div class="modal-backdrop" id="playerModal" onclick="StandingsPanel.closeModalIfBackdrop(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="StandingsPanel.closeModal()">×</button>
+    <div id="modalContent">Loading...</div>
+  </div>
+</div>
+
+<script>
+window.StandingsPanel = {
+  lastData: null,
+
+  async refresh() {
+    try {
+      const data = await apiGet('standings');
+      if (!data.ok) throw new Error(data.error || 'Unknown error');
+      this.lastData = data.standings;
+      this.render(data.standings, data.currentWeek);
+    } catch (e) {
+      document.getElementById('standings-content').innerHTML =
+        `<p style="color:#ef5350;">Error: ${e.message}</p>`;
+    }
+  },
+
+  render(standings, currentWeek) {
+    if (!standings || !standings.length) {
+      document.getElementById('standings-content').innerHTML = '<p>No data yet.</p>';
+      return;
+    }
+
+    const playoffSpots = 8;
+    let html = '';
+
+    // Week header
+    if (currentWeek) {
+      html += `<div style="background:#14301f;text-align:center;font-size:26px;
+        font-weight:bold;color:#7cb342;letter-spacing:3px;padding:15px;
+        border-radius:8px;margin-bottom:12px;">WEEK ${currentWeek}</div>`;
+    }
+
+    html += `<table class="standings-table">
+      <thead><tr>
+        <th>Player</th>
+        <th style="text-align:center;">W - L</th>
+        <th style="text-align:center;">T</th>
+        <th style="text-align:right;">Runs</th>
+        <th style="text-align:right;">GB</th>
+        <th>Tiebreaker</th>
+      </tr></thead>
+      <tbody>`;
+
+    standings.forEach((p, idx) => {
+      // Insert cutoff divider after 8th place
+      if (idx === playoffSpots) {
+        html += `<tr class="cutoff-row"><td colspan="6">PLAYOFF CUTOFF</td></tr>`;
+      }
+
+      const rowClass = p.inPlayoffs ? '' : 'out-of-playoffs';
+      const gbLabel  = p.inPlayoffs ? (p.gb === 0 ? '--' : p.gb) : p.gbPlayoff;
+
+      html += `<tr class="${rowClass}" onclick="StandingsPanel.openModal('${p.name}')">
+        <td>${p.name}</td>
+        <td class="record" style="text-align:center;">${p.wins} - ${p.losses}</td>
+        <td class="numeric" style="text-align:center;">${p.ties || ''}</td>
+        <td class="numeric">${p.runs != null ? p.runs : ''}</td>
+        <td class="numeric">${gbLabel}</td>
+        <td></td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('standings-content').innerHTML = html;
+  },
+
+  async openModal(playerName) {
+    const modal = document.getElementById('playerModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = 'Loading...';
+    modal.classList.add('open');
+
+    try {
+      const data = await apiGet('player', { name: playerName });
+      if (!data.ok) throw new Error(data.error || 'Player not found');
+      content.innerHTML = this.renderPlayerDetail(data.player);
+    } catch (e) {
+      content.innerHTML = `<p style="color:#ef5350;">Error: ${e.message}</p>`;
+    }
+  },
+
+  renderPlayerDetail(p) {
+    // Calculate extra stats from match history
+    const matches = p.matches || [];
+    const homeMatches = matches.filter(m => m.isHome);
+    const awayMatches = matches.filter(m => !m.isHome);
+    const homeW = homeMatches.filter(m => m.result === 'W').length;
+    const homeL = homeMatches.filter(m => m.result === 'L').length;
+    const homeT = homeMatches.filter(m => m.result === 'T').length;
+    const awayW = awayMatches.filter(m => m.result === 'W').length;
+    const awayL = awayMatches.filter(m => m.result === 'L').length;
+    const awayT = awayMatches.filter(m => m.result === 'T').length;
+
+    // Streaks (based on chronological order — assumes matches are in order)
+    let currentStreak = { type: null, count: 0 };
+    let longestWin = 0, longestLoss = 0, tempW = 0, tempL = 0;
+    matches.forEach(m => {
+      if (m.result === 'W') {
+        tempW++; tempL = 0;
+        if (tempW > longestWin) longestWin = tempW;
+      } else if (m.result === 'L') {
+        tempL++; tempW = 0;
+        if (tempL > longestLoss) longestLoss = tempL;
+      } else {
+        tempW = 0; tempL = 0;
+      }
+    });
+    // Current streak = last N same-result games
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const r = matches[i].result;
+      if (!currentStreak.type) { currentStreak.type = r; currentStreak.count = 1; }
+      else if (r === currentStreak.type) currentStreak.count++;
+      else break;
+    }
+
+    // Highest-scoring game
+    const highest = matches.reduce((max, m) =>
+      (m.playerScore > (max?.playerScore || 0)) ? m : max, null);
+
+    // Build HTML
+    const streakLabel = currentStreak.type
+      ? `${currentStreak.count}${currentStreak.type}`
+      : '—';
+
+    let html = `
+      <h3>${p.name} <span class="rank">#${p.rank}</span></h3>
+      <div>
+        <span class="badge ${p.inPlayoffs ? 'in' : 'out'}">
+          ${p.inPlayoffs ? 'In Playoffs' : 'Out of Playoffs'}
+        </span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="label">Record</div>
+          <div class="value">${p.wins}-${p.losses}${p.ties ? '-' + p.ties : ''}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Runs</div>
+          <div class="value">${p.runs || 0}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Games Played</div>
+          <div class="value">${p.gp}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">${p.inPlayoffs ? 'GB' : 'GB Playoff'}</div>
+          <div class="value">${p.inPlayoffs ? (p.gb === 0 ? '—' : p.gb) : p.gbPlayoff}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Current Streak</div>
+          <div class="value">${streakLabel}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Longest W Streak</div>
+          <div class="value">${longestWin}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Home Record</div>
+          <div class="value">${homeW}-${homeL}${homeT ? '-' + homeT : ''}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">Away Record</div>
+          <div class="value">${awayW}-${awayL}${awayT ? '-' + awayT : ''}</div>
+        </div>
+      </div>
+    `;
+
+    if (highest) {
+      html += `<p style="color:#b5d9a0;font-size:14px;">
+        <strong>Highest-scoring game:</strong> ${highest.playerScore} vs ${highest.opponent}
+        (Week ${highest.week}, ${highest.isHome ? 'Home' : 'Away'})
+      </p>`;
+    }
+
+    // Head-to-head summary
+    const h2h = p.vsRecord || {};
+    const h2hEntries = Object.entries(h2h).sort((a, b) => a[0].localeCompare(b[0]));
+    if (h2hEntries.length) {
+      html += `<h4>Head-to-Head</h4><ul class="h2h-list">`;
+      h2hEntries.forEach(([opp, r]) => {
+        html += `<li>
+          <span></span>
+          <span style="color:#ffe082;font-weight:bold;">${opp}</span>
+          <span class="record">${r.w}-${r.l}${r.t ? '-' + r.t : ''}</span>
+          <span></span>
+        </li>`;
+      });
+      html += `</ul>`;
+    }
+
+    // Match history
+    if (matches.length) {
+      html += `<h4>Match History</h4><ul class="match-list">`;
+      // Show most recent first
+      [...matches].reverse().forEach(m => {
+        const resultClass = m.result.toLowerCase();
+        html += `<li>
+          <span style="color:#b5d9a0;">Wk ${m.week}</span>
+          <span>${m.isHome ? 'vs' : '@'} <strong>${m.opponent}</strong></span>
+          <span class="record">${m.playerScore}-${m.opponentScore}</span>
+          <span class="${resultClass}">${m.result}</span>
+        </li>`;
+      });
+      html += `</ul>`;
+    }
+
+    return html;
+  },
+
+  closeModal() {
+    document.getElementById('playerModal').classList.remove('open');
+  },
+
+  closeModalIfBackdrop(event) {
+    if (event.target.id === 'playerModal') this.closeModal();
+  }
+};
+
+// Close modal on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') StandingsPanel.closeModal();
+});
+</script>
