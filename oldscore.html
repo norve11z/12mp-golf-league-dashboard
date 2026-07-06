@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Minigolf League</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #1a3d2e; color: #fff; }
+  .container { display: grid; grid-template-columns: 1.25fr 1fr; gap: 15px; padding: 15px; height: 100vh; box-sizing: border-box; }
+  .left { background: #2d5a3d; border-radius: 10px; padding: 25px; overflow: auto; }
+  .right { display: grid; grid-template-rows: 1fr 1.3fr; gap: 15px; }
+  .module { background: #2d5a3d; border-radius: 10px; padding: 25px; overflow: auto; position: relative; }
+  h2 { margin-top: 0; font-size: 28px; border-bottom: 3px solid #7cb342; padding-bottom: 10px; letter-spacing: 1px; }
+  table { width: 100%; border-collapse: collapse; font-size: 20px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #4a7a5a; }
+  th { background: #14301f; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: #b5d9a0; }
+  tbody tr:hover { background: #3a6a4d; }
+  td:first-child { font-weight: bold; font-size: 22px; color: #ffe082; }
+  .week-header { background: #14301f; text-align: center; font-size: 26px; font-weight: bold;
+                 color: #7cb342; letter-spacing: 3px; padding: 15px !important; }
+  .cutoff { background: #b71c1c !important; text-align: center; font-weight: bold;
+            letter-spacing: 2px; font-size: 18px; padding: 8px !important; }
+  .cutoff td { color: white; }
+  .subheader { background: #14301f; font-weight: bold; color: #b5d9a0; text-transform: uppercase;
+               font-size: 14px; letter-spacing: 1px; }
+  .subheader td:first-child { color: #b5d9a0; font-size: 14px; }
+  .spacer td { border: none; padding: 5px; }
+  .refresh { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px;
+             background: #7cb342; color: white; border: none; border-radius: 5px;
+             cursor: pointer; font-size: 16px; font-weight: bold; z-index: 100; }
+  .refresh:hover { background: #8bc34a; }
+  #scoreboardModule { display: flex; flex-direction: column; }
+  .sb-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .sb-controls select { background: #14301f; color: #ffe082; border: 2px solid #7cb342;
+                         padding: 8px; font-size: 16px; border-radius: 5px; flex: 1; min-width: 120px; font-weight: bold; }
+  .sb-btn { background: #7cb342; color: white; border: none; padding: 8px 14px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; }
+  .sb-btn:hover { background: #8bc34a; }
+  .sb-board { flex: 1; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px;
+              align-items: center; justify-items: center; }
+  .sb-side { display: flex; flex-direction: column; align-items: center; gap: 10px;
+           padding: 5px; border-radius: 10px; transition: all 0.3s; width: 80%; position: relative; }
+  .sb-side.leader { background: transparent; box-shadow: 0 0 15px 2px rgba(124, 179, 66, 0.6); }
+  .sb-side.tied { background: rgba(255, 235, 59, 0.15); }
+  .sb-side.at-bat::before { content: ''; position: absolute; top: 50%; left: -20px;
+                            transform: translateY(-50%); width: 0; height: 0;
+                            border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+                            border-left: 18px solid #ffe082; }
+  .sb-name { font-size: 36px; font-weight: bold; color: #ffe082; text-transform: uppercase;
+             letter-spacing: 3px; min-height: 44px; text-align: center;
+             text-shadow: 2px 2px 6px rgba(0,0,0,0.5); }
+  .sb-arrow { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.4);
+              width: 90px; height: 70px; cursor: pointer; border-radius: 4px; font-size: 14px;
+              transition: all 0.2s; }
+  .sb-arrow:hover { color: white; border-color: #7cb342; background: rgba(124,179,66,0.2); }
+  .flip-wrap { display: flex; gap: 6px; }
+  .flip-card { perspective: 800px; width: 90px; height: 140px; }
+  .flip-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+                transition: transform 0.6s; }
+  .flip-inner.flipping { transform: rotateX(-180deg); }
+  .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+               background: linear-gradient(180deg, #0d1f14 0%, #14301f 50%, #0d1f14 100%);
+               border-radius: 8px; display: flex; align-items: center; justify-content: center;
+               font-size: 100px; font-weight: bold; color: #ffe082; font-family: 'Courier New', monospace;
+               box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.5);
+               border: 2px solid #4a7a5a; }
+  .flip-face.back { transform: rotateX(180deg); }
+  .flip-face::before { content: ''; position: absolute; left: 0; right: 0; height: 2px;
+                       background: rgba(0,0,0,0.7); top: 50%; }
+  .sb-vs { font-size: 36px; font-weight: bold; color: #7cb342; }
+  .sb-footer { display: flex; gap: 8px; margin-top: 15px; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+  .innings-box { display: none; align-items: center; gap: 15px; background: #14301f;
+                 padding: 12px 20px; border-radius: 8px; border: 2px solid #7cb342; }
+  .innings-label { font-size: 18px; color: #b5d9a0; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
+  .innings-display { display: flex; flex-direction: column; align-items: center; gap: 4px;
+                     min-width: 90px; }
+  .innings-half { display: flex; align-items: center; gap: 8px; font-size: 20px;
+                  color: #ffe082; font-weight: bold; font-family: 'Courier New', monospace; }
+  .half-arrow { font-size: 16px; color: #4a7a5a; transition: color 0.2s; }
+  .half-arrow.active { color: #ffe082; text-shadow: 0 0 8px #ffe082; }
+  .innings-number { font-size: 32px; color: #ffe082; font-weight: bold;
+                    font-family: 'Courier New', monospace; }
+  .innings-btn { background: #7cb342; color: white; border: none; width: 40px; height: 40px;
+                 border-radius: 5px; cursor: pointer; font-size: 22px; font-weight: bold; }
+  .innings-btn:hover { background: #8bc34a; }
+
+  :fullscreen { background: #1a3d2e; }
+  :fullscreen .sb-name { font-size: 80px; }
+  :fullscreen .flip-card { width: 220px; height: 320px; }
+  :fullscreen .flip-face { font-size: 240px; }
+  :fullscreen .sb-vs { font-size: 100px; }
+  :fullscreen #scoreboardModule { padding: 50px; }
+  :fullscreen .sb-arrow { width: 200px; height: 120px; font-size: 20px; }
+  :fullscreen .sb-side.at-bat::before { left: -40px;
+                                        border-top-width: 24px; border-bottom-width: 24px;
+                                        border-left-width: 36px; }
+  :fullscreen .innings-box { display: flex; padding: 25px 45px; gap: 30px; }
+  :fullscreen .innings-label { font-size: 36px; }
+  :fullscreen .innings-half { font-size: 36px; gap: 15px; }
+  :fullscreen .half-arrow { font-size: 32px; }
+  :fullscreen .innings-number { font-size: 72px; }
+  :fullscreen .innings-btn { width: 80px; height: 80px; font-size: 40px; }
+  :fullscreen .sb-footer { margin-top: 40px; gap: 30px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="left">
+    <h2>Current Standings</h2>
+    <div id="standings">Loading...</div>
+  </div>
+  <div class="right">
+    <div class="module">
+      <h2>Next Week's Matchups</h2>
+      <div id="nextWeek">Loading...</div>
+    </div>
+    <div class="module" id="scoreboardModule">
+      <h2 style="display:flex; justify-content:space-between; align-items:center;">
+        <span>Live Scoreboard</span>
+        <button class="sb-btn" onclick="toggleFullscreen()" style="font-size:12px;">Fullscreen</button>
+      </h2>
+      <div class="sb-controls">
+        <select id="p1Select" onchange="onPlayerChange()"><option value="">-- Player 1 --</option></select>
+        <select id="p2Select" onchange="onPlayerChange()"><option value="">-- Player 2 --</option></select>
+      </div>
+      <div class="sb-board">
+        <div class="sb-side" id="side1">
+          <div class="sb-name" id="name1"></div>
+          <button class="sb-arrow" onclick="changeScore(1, 1)">+</button>
+          <div class="flip-wrap">
+            <div class="flip-card"><div class="flip-inner" id="flip1t">
+              <div class="flip-face front" id="face1tfront">0</div>
+              <div class="flip-face back" id="face1tback">0</div>
+            </div></div>
+            <div class="flip-card"><div class="flip-inner" id="flip1o">
+              <div class="flip-face front" id="face1ofront">0</div>
+              <div class="flip-face back" id="face1oback">0</div>
+            </div></div>
+          </div>
+          <button class="sb-arrow" onclick="changeScore(1, -1)">-</button>
+        </div>
+        <div class="sb-vs">VS</div>
+        <div class="sb-side" id="side2">
+          <div class="sb-name" id="name2"></div>
+          <button class="sb-arrow" onclick="changeScore(2, 1)">+</button>
+          <div class="flip-wrap">
+            <div class="flip-card"><div class="flip-inner" id="flip2t">
+              <div class="flip-face front" id="face2tfront">0</div>
+              <div class="flip-face back" id="face2tback">0</div>
+            </div></div>
+            <div class="flip-card"><div class="flip-inner" id="flip2o">
+              <div class="flip-face front" id="face2ofront">0</div>
+              <div class="flip-face back" id="face2oback">0</div>
+            </div></div>
+          </div>
+                    <button class="sb-arrow" onclick="changeScore(2, -1)">-</button>
+        </div>
+      </div>
+      <div class="sb-footer">
+        <div class="innings-box">
+          <span class="innings-label">Inning</span>
+          <button class="innings-btn" onclick="changeInning(-1)">-</button>
+          <div class="innings-display">
+            <div class="innings-half">
+              <span class="half-arrow" id="arrowTop">TOP</span>
+              <span class="innings-number" id="inningNumber">1</span>
+              <span class="half-arrow" id="arrowBot">BOT</span>
+            </div>
+          </div>
+          <button class="innings-btn" onclick="changeInning(1)">+</button>
+        </div>
+        <button class="sb-btn" onclick="resetScores()">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+<button class="refresh" onclick="loadAll()">Refresh</button>
+<script>
+const URLS = {
+  standings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=0&single=true&output=csv',
+  nextWeek: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=922131074&single=true&output=csv',
+  currentWeek: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQX5kZemhRqCBH8bLxt6UBC7lNUoFIAQbVDH8nu8uplMPWu9e-cyeAhKuBi3UcCHp7rZHbEy_htIEdT/pub?gid=652571751&single=true&output=csv'
+};
+let scores = { p1: 0, p2: 0 };
+let players = { p1: '', p2: '' };
+// halfIndex: 0 = Top 1, 1 = Bot 1, 2 = Top 2, 3 = Bot 2, ...
+let halfIndex = 0;
+let playerList = [];
+
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.trim().split(/\r?\n/);
+  for (const line of lines) {
+    const cells = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = !inQ;
+      else if (c === ',' && !inQ) { cells.push(cur); cur = ''; }
+      else cur += c;
+    }
+    cells.push(cur);
+    rows.push(cells.map(c => c.trim()));
+  }
+  return rows;
+}
+
+function clean(s) { return (s || '').replace(/\*\*/g, '').trim(); }
+function isBlankRow(row) { return row.every(c => !clean(c)); }
+
+function buildStandingsTable(rows) {
+  if (!rows.length) return '<p>No data</p>';
+  playerList = [];
+  let html = '<table><tbody>';
+  const skipWords = ['week','wins','losses','runs','gb','tiebreaker','playoff','cutoff'];
+  rows.forEach(row => {
+    const cleaned = row.map(clean);
+    const first = cleaned[0].toLowerCase();
+    const joined = cleaned.join(' ').toLowerCase();
+    if (isBlankRow(row)) {
+      html += '<tr class="spacer"><td colspan="' + row.length + '"></td></tr>';
+    } else if (joined.includes('week') && /\d/.test(joined)) {
+      html += '<tr class="week-header"><td colspan="' + row.length + '">' + cleaned.filter(c=>c).join(' ') + '</td></tr>';
+    } else if (joined.includes('playoff cutoff')) {
+      html += '<tr class="cutoff"><td colspan="' + row.length + '">PLAYOFF CUTOFF</td></tr>';
+    } else if (joined.includes('wins') && joined.includes('losses')) {
+      html += '<tr class="subheader">';
+      cleaned.forEach(c => html += '<td>' + c + '</td>');
+      html += '</tr>';
+    } else if (joined.includes('gb from playoff')) {
+      html += '<tr class="subheader">';
+      cleaned.forEach(c => html += '<td>' + c + '</td>');
+      html += '</tr>';
+    } else {
+      html += '<tr>';
+      cleaned.forEach(c => html += '<td>' + c + '</td>');
+      html += '</tr>';
+      if (cleaned[0] && !skipWords.some(w => first.includes(w))) {
+        playerList.push(cleaned[0]);
+      }
+    }
+  });
+  return html + '</tbody></table>';
+}
+
+function buildSimpleTable(rows) {
+  if (!rows.length) return '<p>No data</p>';
+  let html = '<table><tbody>';
+  rows.forEach(row => {
+    if (isBlankRow(row)) {
+      html += '<tr class="spacer"><td colspan="' + row.length + '"></td></tr>';
+    } else {
+      html += '<tr>';
+      row.map(clean).forEach(c => html += '<td>' + c + '</td>');
+      html += '</tr>';
+    }
+  });
+  return html + '</tbody></table>';
+}
+
+async function loadSection(url, elementId, builder) {
+  try {
+    const res = await fetch(url + '&_=' + Date.now());
+    const text = await res.text();
+    document.getElementById(elementId).innerHTML = builder(parseCSV(text));
+  } catch(e) {
+    document.getElementById(elementId).innerHTML = 'Error loading: ' + e.message;
+  }
+}
+
+async function loadAll() {
+  await loadSection(URLS.standings, 'standings', buildStandingsTable);
+  loadSection(URLS.nextWeek, 'nextWeek', buildSimpleTable);
+  populatePlayerDropdowns();
+}
+
+function populatePlayerDropdowns() {
+  const p1 = document.getElementById('p1Select');
+  const p2 = document.getElementById('p2Select');
+  const prev1 = p1.value, prev2 = p2.value;
+  p1.innerHTML = '<option value="">-- Player 1 --</option>';
+  p2.innerHTML = '<option value="">-- Player 2 --</option>';
+  playerList.forEach(name => {
+    p1.innerHTML += '<option value="' + name + '">' + name + '</option>';
+    p2.innerHTML += '<option value="' + name + '">' + name + '</option>';
+  });
+  if (prev1) p1.value = prev1;
+  if (prev2) p2.value = prev2;
+  loadState();
+}
+
+function onPlayerChange() {
+  players.p1 = document.getElementById('p1Select').value;
+  players.p2 = document.getElementById('p2Select').value;
+  document.getElementById('name1').textContent = players.p1 || 'P1';
+  document.getElementById('name2').textContent = players.p2 || 'P2';
+  updateLeader();
+  updateInningDisplay();
+  saveState();
+}
+
+function flipDigit(id, newDigit) {
+  const inner = document.getElementById(id);
+  const front = document.getElementById(id.replace('flip','face') + 'front');
+  const back = document.getElementById(id.replace('flip','face') + 'back');
+  if (front.textContent == newDigit) return;
+  back.textContent = newDigit;
+  inner.classList.add('flipping');
+  setTimeout(() => {
+    front.textContent = newDigit;
+    inner.classList.remove('flipping');
+  }, 600);
+}
+
+function flipTo(side, newVal) {
+  const padded = String(Math.min(99, Math.max(0, newVal))).padStart(2, '0');
+  flipDigit('flip' + side + 't', padded[0]);
+  flipDigit('flip' + side + 'o', padded[1]);
+}
+
+function changeScore(side, delta) {
+  const key = 'p' + side;
+  const newVal = Math.max(0, scores[key] + delta);
+  if (newVal === scores[key]) return;
+  scores[key] = newVal;
+  flipTo(side, newVal);
+  updateLeader();
+  saveState();
+}
+
+function changeInning(delta) {
+  const newVal = Math.max(0, halfIndex + delta);
+  if (newVal === halfIndex) return;
+  halfIndex = newVal;
+  updateInningDisplay();
+  saveState();
+}
+
+function updateInningDisplay() {
+  const inningNum = Math.floor(halfIndex / 2) + 1;
+  const isTop = (halfIndex % 2) === 0;
+  document.getElementById('inningNumber').textContent = inningNum;
+  document.getElementById('arrowTop').classList.toggle('active', isTop);
+  document.getElementById('arrowBot').classList.toggle('active', !isTop);
+
+  // Highlight who is "at bat"
+  const s1 = document.getElementById('side1');
+  const s2 = document.getElementById('side2');
+  s1.classList.remove('at-bat');
+  s2.classList.remove('at-bat');
+  if (players.p1 && players.p2) {
+    if (isTop) s1.classList.add('at-bat');
+    else s2.classList.add('at-bat');
+  }
+}
+
+function updateLeader() {
+  const s1 = document.getElementById('side1');
+  const s2 = document.getElementById('side2');
+  s1.classList.remove('leader','tied');
+  s2.classList.remove('leader','tied');
+  if (!players.p1 || !players.p2) return;
+  if (scores.p1 > scores.p2) s1.classList.add('leader');
+  else if (scores.p2 > scores.p1) s2.classList.add('leader');
+  else if (scores.p1 > 0 || scores.p2 > 0) { s1.classList.add('tied'); s2.classList.add('tied'); }
+}
+
+function resetScores() {
+  scores.p1 = 0; scores.p2 = 0;
+  halfIndex = 0;
+  flipTo(1, 0); flipTo(2, 0);
+  updateInningDisplay();
+  updateLeader();
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem('minigolfState', JSON.stringify({ scores, players, halfIndex }));
+}
+
+function setDigits(side, val) {
+  const padded = String(Math.min(99, Math.max(0, val))).padStart(2, '0');
+  document.getElementById('face' + side + 'tfront').textContent = padded[0];
+  document.getElementById('face' + side + 'tback').textContent = padded[0];
+  document.getElementById('face' + side + 'ofront').textContent = padded[1];
+  document.getElementById('face' + side + 'oback').textContent = padded[1];
+}
+
+function loadState() {
+  const raw = localStorage.getItem('minigolfState');
+  if (!raw) return;
+  try {
+    const st = JSON.parse(raw);
+    scores = st.scores || { p1:0, p2:0 };
+    players = st.players || { p1:'', p2:'' };
+    halfIndex = typeof st.halfIndex === 'number' ? st.halfIndex : 0;
+    if (players.p1) document.getElementById('p1Select').value = players.p1;
+    if (players.p2) document.getElementById('p2Select').value = players.p2;
+    document.getElementById('name1').textContent = players.p1 || 'P1';
+    document.getElementById('name2').textContent = players.p2 || 'P2';
+    setDigits(1, scores.p1);
+        setDigits(2, scores.p2);
+    updateInningDisplay();
+    updateLeader();
+  } catch(e) {}
+}
+
+function toggleFullscreen() {
+  const el = document.getElementById('scoreboardModule');
+  if (!document.fullscreenElement) el.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>
+
