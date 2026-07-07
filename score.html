@@ -56,8 +56,10 @@ async function loadPanel(url, containerId) {
 
 /* ===== BOOT ===== */
 (async function boot() {
-  await loadPanel('standings.html', 'standings-panel');
-  // (upcoming and scoring panels will be added later)
+  await Promise.all([
+    loadPanel('standings.html', 'standings-panel'),
+    loadPanel('scoring.html',   'scoring-panel')
+  ]);
   setTimeout(() => {
     if (window.StandingsPanel) StandingsPanel.refresh();
   }, 50);
