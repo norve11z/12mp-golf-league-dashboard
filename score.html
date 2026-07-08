@@ -28,6 +28,32 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbx6FiPS3jaIKs9lD0TIHkMskdPjFfUvH4siagSjB8kuWLBxoy8JbH1EYL1sy_8nanlA/exec';
 const API_TOKEN = '12MP67';
 
+window.AppCache = {
+  standings: null,
+  currentWeek: null,
+  openMatches: null,
+  results: null,
+  lastFetch: 0
+};
+
+async function loadAllData() {
+  try {
+    const data = await apiGet('all');
+    if (!data.ok) throw new Error(data.error);
+    AppCache.standings = data.standings;
+    AppCache.currentWeek = data.currentWeek;
+    AppCache.openMatches = data.openMatches;
+    AppCache.results = data.results;
+    AppCache.lastFetch = Date.now();
+    // Notify all panels to re-render from cache
+    if (window.StandingsPanel) StandingsPanel.renderFromCache();
+    if (window.UpcomingPanel)  UpcomingPanel.renderFromCache();
+    if (window.ScoringPanel)   ScoringPanel.onCacheUpdate();
+  } catch (e) {
+    console.error('Load failed:', e);
+  }
+}
+
 /* ===== API HELPER ===== */
 async function apiGet(action, extra = {}) {
   const params = new URLSearchParams({ action, token: API_TOKEN, ...extra });
@@ -58,17 +84,17 @@ async function loadPanel(url, containerId) {
 (async function boot() {
   await Promise.all([
     loadPanel('standings.html', 'standings-panel'),
+    loadPanel('upcoming.html',  'upcoming-panel'),
     loadPanel('scoring.html',   'scoring-panel')
   ]);
-  setTimeout(() => {
-    if (window.StandingsPanel) StandingsPanel.refresh();
-  }, 50);
+  setTimeout(loadAllData, 50);
 })();
 
 /* ===== 30-SECOND POLLING REFRESH ===== */
 setInterval(() => {
   if (window.StandingsPanel) StandingsPanel.refresh();
-}, 180000);
+  if (window.UpcomingPanel)  UpcomingPanel.refresh();
+}, 300000);
 </script>
 </body>
 </html>

@@ -450,18 +450,18 @@ window.ScoringPanel = {
   },
 
   // ===== LEAGUE GAME FLOW =====
-  async startLeagueGame() {
+  startLeagueGame() {
     this.showView('view-week');
     document.getElementById('sb-title').textContent = 'League Game — Select Week';
-    document.getElementById('week-list').innerHTML = 'Loading...';
-    try {
-      const data = await apiGet('openMatches');
-      if (!data.ok) throw new Error(data.error);
-      this.openMatches = data.openMatches || {};
+    this.openMatches = AppCache.openMatches || {};
+    this.renderWeekList();
+  },
+
+  onCacheUpdate() {
+    const weekView = document.getElementById('view-week');
+    if (weekView && weekView.classList.contains('active')) {
+      this.openMatches = AppCache.openMatches || {};
       this.renderWeekList();
-    } catch (e) {
-      document.getElementById('week-list').innerHTML =
-        `<p style="color:#ef5350;">Error: ${e.message}</p>`;
     }
   },
 
@@ -701,9 +701,8 @@ window.ScoringPanel = {
       this.showView('view-submitted');
       document.getElementById('sb-title').textContent = 'Match Complete';
 
-      // Refresh standings on the left panel
-      if (window.StandingsPanel) StandingsPanel.refresh();
-    } catch (e) {
+      await loadAllData();
+     } catch (e) {
       alert('Error submitting score: ' + e.message);
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Score';

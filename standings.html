@@ -93,18 +93,13 @@
 
 <script>
 window.StandingsPanel = {
-  lastData: null,
-
   async refresh() {
-    try {
-      const data = await apiGet('standings');
-      if (!data.ok) throw new Error(data.error || 'Unknown error');
-      this.lastData = data.standings;
-      this.render(data.standings, data.currentWeek);
-    } catch (e) {
-      document.getElementById('standings-content').innerHTML =
-        `<p style="color:#ef5350;">Error: ${e.message}</p>`;
-    }
+    await loadAllData();
+  },
+
+  renderFromCache() {
+    if (!AppCache.standings) return;
+    this.render(AppCache.standings, AppCache.currentWeek);
   },
 
   render(standings, currentWeek) {
@@ -116,7 +111,6 @@ window.StandingsPanel = {
     const playoffSpots = 8;
     let html = '';
 
-    // Week header
     if (currentWeek) {
       html += `<div style="background:#14301f;text-align:center;font-size:26px;
         font-weight:bold;color:#7cb342;letter-spacing:3px;padding:15px;
@@ -135,11 +129,9 @@ window.StandingsPanel = {
       <tbody>`;
 
     standings.forEach((p, idx) => {
-      // Insert cutoff divider after 8th place
       if (idx === playoffSpots) {
         html += `<tr class="cutoff-row"><td colspan="6">PLAYOFF CUTOFF</td></tr>`;
       }
-
       const rowClass = p.inPlayoffs ? '' : 'out-of-playoffs';
       const gbLabel  = p.inPlayoffs ? (p.gb === 0 ? '--' : p.gb) : p.gbPlayoff;
 
@@ -157,23 +149,32 @@ window.StandingsPanel = {
     document.getElementById('standings-content').innerHTML = html;
   },
 
-  async openModal(playerName) {
-    const modal = document.getElementById('playerModal');
-    const content = document.getElementById('modalContent');
-    content.innerHTML = 'Loading...';
-    modal.classList.add('open');
+  openModal(playerName) {
+    const player = this.buildPlayerDetail(playerName);
+    if (!player) return;
+    document.getElementById('modalContent').innerHTML = this.renderPlayerDetail(player);
+    document.getElementById('playerModal').classList.add('open');
+  },
 
-    try {
-      const data = await apiGet('player', { name: playerName });
-      if (!data.ok) throw new Error(data.error || 'Player not found');
-      content.innerHTML = this.renderPlayerDetail(data.player);
-    } catch (e) {
-      content.innerHTML = `<p style="color:#ef5350;">Error: ${e.message}</p>`;
-    }
+  buildPlayerDetail(name) {
+    const p = AppCache.standings.find(x => x.name === name);
+    if (!p) return null;
+    const matches = (AppCache.results || [])
+      .filter(r => r.Home === name || r.Away === name)
+      .map(r => ({
+        week: r.Week,
+        opponent: r.Home === name ? r.Away : r.Home,
+        isHome: r.Home === name,
+        playerScore: r.Home === name ? r.HomeScore : r.AwayScore,
+        opponentScore: r.Home === name ? r.AwayScore : r.HomeScore,
+        result: r.HomeScore === r.AwayScore ? 'T'
+              : (r.Home === name ? (r.HomeScore > r.AwayScore ? 'W' : 'L')
+                                 : (r.AwayScore > r.HomeScore ? 'W' : 'L'))
+      }));
+    return { ...p, matches };
   },
 
   renderPlayerDetail(p) {
-    // Calculate extra stats from match history
     const matches = p.matches || [];
     const homeMatches = matches.filter(m => m.isHome);
     const awayMatches = matches.filter(m => !m.isHome);
@@ -184,21 +185,13 @@ window.StandingsPanel = {
     const awayL = awayMatches.filter(m => m.result === 'L').length;
     const awayT = awayMatches.filter(m => m.result === 'T').length;
 
-    // Streaks (based on chronological order — assumes matches are in order)
     let currentStreak = { type: null, count: 0 };
-    let longestWin = 0, longestLoss = 0, tempW = 0, tempL = 0;
+    let longestWin = 0, tempW = 0, tempL = 0;
     matches.forEach(m => {
-      if (m.result === 'W') {
-        tempW++; tempL = 0;
-        if (tempW > longestWin) longestWin = tempW;
-      } else if (m.result === 'L') {
-        tempL++; tempW = 0;
-        if (tempL > longestLoss) longestLoss = tempL;
-      } else {
-        tempW = 0; tempL = 0;
-      }
+      if (m.result === 'W') { tempW++; tempL = 0; if (tempW > longestWin) longestWin = tempW; }
+      else if (m.result === 'L') { tempL++; tempW = 0; }
+      else { tempW = 0; tempL = 0; }
     });
-    // Current streak = last N same-result games
     for (let i = matches.length - 1; i >= 0; i--) {
       const r = matches[i].result;
       if (!currentStreak.type) { currentStreak.type = r; currentStreak.count = 1; }
@@ -206,11 +199,9 @@ window.StandingsPanel = {
       else break;
     }
 
-    // Highest-scoring game
     const highest = matches.reduce((max, m) =>
       (m.playerScore > (max?.playerScore || 0)) ? m : max, null);
 
-    // Build HTML
     const streakLabel = currentStreak.type
       ? `${currentStreak.count}${currentStreak.type}`
       : '—';
@@ -222,40 +213,23 @@ window.StandingsPanel = {
           ${p.inPlayoffs ? 'In Playoffs' : 'Out of Playoffs'}
         </span>
       </div>
-
       <div class="stats-grid">
-        <div class="stat-box">
-          <div class="label">Record</div>
-          <div class="value">${p.wins}-${p.losses}${p.ties ? '-' + p.ties : ''}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Runs</div>
-          <div class="value">${p.runs || 0}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Games Played</div>
-          <div class="value">${p.gp}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">${p.inPlayoffs ? 'GB' : 'GB Playoff'}</div>
-          <div class="value">${p.inPlayoffs ? (p.gb === 0 ? '—' : p.gb) : p.gbPlayoff}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Current Streak</div>
-          <div class="value">${streakLabel}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Longest W Streak</div>
-          <div class="value">${longestWin}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Home Record</div>
-          <div class="value">${homeW}-${homeL}${homeT ? '-' + homeT : ''}</div>
-        </div>
-        <div class="stat-box">
-          <div class="label">Away Record</div>
-          <div class="value">${awayW}-${awayL}${awayT ? '-' + awayT : ''}</div>
-        </div>
+        <div class="stat-box"><div class="label">Record</div>
+          <div class="value">${p.wins}-${p.losses}${p.ties ? '-' + p.ties : ''}</div></div>
+        <div class="stat-box"><div class="label">Runs</div>
+          <div class="value">${p.runs || 0}</div></div>
+        <div class="stat-box"><div class="label">Games Played</div>
+          <div class="value">${p.gp}</div></div>
+        <div class="stat-box"><div class="label">${p.inPlayoffs ? 'GB' : 'GB Playoff'}</div>
+          <div class="value">${p.inPlayoffs ? (p.gb === 0 ? '—' : p.gb) : p.gbPlayoff}</div></div>
+        <div class="stat-box"><div class="label">Current Streak</div>
+          <div class="value">${streakLabel}</div></div>
+        <div class="stat-box"><div class="label">Longest W Streak</div>
+          <div class="value">${longestWin}</div></div>
+        <div class="stat-box"><div class="label">Home Record</div>
+          <div class="value">${homeW}-${homeL}${homeT ? '-' + homeT : ''}</div></div>
+        <div class="stat-box"><div class="label">Away Record</div>
+          <div class="value">${awayW}-${awayL}${awayT ? '-' + awayT : ''}</div></div>
       </div>
     `;
 
@@ -266,7 +240,6 @@ window.StandingsPanel = {
       </p>`;
     }
 
-    // Head-to-head summary
     const h2h = p.vsRecord || {};
     const h2hEntries = Object.entries(h2h).sort((a, b) => a[0].localeCompare(b[0]));
     if (h2hEntries.length) {
@@ -282,10 +255,8 @@ window.StandingsPanel = {
       html += `</ul>`;
     }
 
-    // Match history
     if (matches.length) {
       html += `<h4>Match History</h4><ul class="match-list">`;
-      // Show most recent first
       [...matches].reverse().forEach(m => {
         const resultClass = m.result.toLowerCase();
         html += `<li>
@@ -297,7 +268,6 @@ window.StandingsPanel = {
       });
       html += `</ul>`;
     }
-
     return html;
   },
 
@@ -310,7 +280,6 @@ window.StandingsPanel = {
   }
 };
 
-// Close modal on Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') StandingsPanel.closeModal();
 });

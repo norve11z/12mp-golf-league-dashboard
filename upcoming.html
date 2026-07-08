@@ -1,33 +1,224 @@
-<h2>Next Week's Matchups</h2>
-<div id="nextWeek">Loading...</div>
+<style>
+  /* ===== UPCOMING PANEL ===== */
+  #upcomingModule { display: flex; flex-direction: column; height: 100%; }
+  #upcomingModule h2 {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 0; font-size: 28px; border-bottom: 3px solid #7cb342;
+    padding-bottom: 10px; letter-spacing: 1px;
+  }
+  #upcomingModule h2 button {
+    background: #7cb342; color: white; border: none;
+    padding: 8px 14px; border-radius: 5px; cursor: pointer;
+    font-weight: bold; font-size: 13px; letter-spacing: 1px;
+    text-transform: uppercase; transition: background 0.2s;
+  }
+  #upcomingModule h2 button:hover { background: #8bc34a; }
+
+  .upcoming-list {
+    flex: 1; overflow: hidden;
+    display: flex; flex-direction: column; gap: 6px;
+    padding-top: 5px;
+  }
+  .upcoming-row {
+    display: grid;
+    grid-template-columns: 55px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #14301f;
+    border-left: 4px solid #7cb342;
+    border-radius: 6px;
+    font-size: 18px;
+    min-height: 20px;
+  }
+  .upcoming-row .wk-tag {
+    color: #b5d9a0;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    background: rgba(124, 179, 66, 0.15);
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+  .upcoming-row .matchup {
+    color: #ffe082;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .upcoming-row .matchup .vs {
+    color: #7cb342;
+    margin: 0 8px;
+    font-size: 15px;
+  }
+  .upcoming-empty {
+    color: #b5d9a0; text-align: center;
+    padding: 20px; font-style: italic;
+  }
+
+  /* ===== UPCOMING MODAL ===== */
+  .upcoming-modal-backdrop {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8); z-index: 250;
+    align-items: center; justify-content: center;
+  }
+  .upcoming-modal-backdrop.open { display: flex; }
+  .upcoming-modal {
+    background: #2d5a3d; border-radius: 12px; padding: 30px;
+    max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 0 40px rgba(124, 179, 66, 0.4);
+    position: relative;
+  }
+  .upcoming-modal h3 {
+    margin: 0 0 20px 0; font-size: 28px; color: #ffe082;
+    text-transform: uppercase; letter-spacing: 3px;
+    border-bottom: 2px solid #4a7a5a; padding-bottom: 12px;
+  }
+  .upcoming-modal-close {
+    position: absolute; top: 12px; right: 16px;
+    background: none; border: none; color: #fff;
+    font-size: 32px; cursor: pointer; line-height: 1;
+  }
+  .upcoming-modal-close:hover { color: #ffe082; }
+
+  .week-block { margin-bottom: 24px; }
+  .week-block:last-child { margin-bottom: 0; }
+  .week-block-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 12px; background: #14301f;
+    border-left: 4px solid #7cb342; border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .week-block-header .week-name {
+    color: #7cb342; font-size: 20px; font-weight: bold;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .week-block-header .week-count {
+    color: #b5d9a0; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .week-block-matches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+  .week-block-matches .match {
+    padding: 8px 12px; background: rgba(20, 48, 31, 0.5);
+    border-radius: 4px; color: #ffe082;
+    font-weight: bold; font-size: 16px; letter-spacing: 1px;
+  }
+  .week-block-matches .match .vs {
+    color: #7cb342; margin: 0 6px; font-size: 14px;
+  }
+
+  /* Custom scrollbar */
+  .upcoming-modal::-webkit-scrollbar { width: 8px; }
+  .upcoming-modal::-webkit-scrollbar-track { background: #14301f; border-radius: 4px; }
+  .upcoming-modal::-webkit-scrollbar-thumb { background: #4a7a5a; border-radius: 4px; }
+  .upcoming-modal::-webkit-scrollbar-thumb:hover { background: #7cb342; }
+</style>
+
+<div id="upcomingModule">
+  <h2>
+    <span>Upcoming Matches</span>
+    <button onclick="UpcomingPanel.openModal()">View Upcoming Weeks</button>
+  </h2>
+  <div class="upcoming-list" id="upcoming-content">Loading...</div>
+</div>
+
+<!-- ===== UPCOMING WEEKS MODAL ===== -->
+<div class="upcoming-modal-backdrop" id="upcomingModal" onclick="UpcomingPanel.closeModalIfBackdrop(event)">
+  <div class="upcoming-modal">
+    <button class="upcoming-modal-close" onclick="UpcomingPanel.closeModal()">×</button>
+    <h3>Upcoming Weeks</h3>
+    <div id="upcomingModalContent">Loading...</div>
+  </div>
+</div>
 
 <script>
 window.UpcomingPanel = {
-  refresh() {
-    return this._load();
+  MAX_ROWS: 6,
+  MODAL_WEEKS: 4,
+  cache: null,
+
+  async refresh() {
+    await loadAllData();
   },
-  async _load() {
-    try {
-      const res = await fetch(URLS.nextWeek + '&_=' + Date.now());
-      const text = await res.text();
-      document.getElementById('nextWeek').innerHTML = this._build(parseCSV(text));
-    } catch(e) {
-      document.getElementById('nextWeek').innerHTML = 'Error loading: ' + e.message;
+
+  renderFromCache() {
+    this.cache = AppCache.openMatches || {};
+    this.renderMainPanel();
+  },
+
+  _sortedWeeks() {
+    return Object.keys(this.cache || {})
+      .map(Number)
+      .filter(n => !isNaN(n))
+      .sort((a, b) => a - b);
+  },
+
+  renderMainPanel() {
+    const container = document.getElementById('upcoming-content');
+    const weeks = this._sortedWeeks();
+    if (!weeks.length) {
+      container.innerHTML = '<p class="upcoming-empty">No upcoming matches. All games have been played!</p>';
+      return;
     }
-  },
-  _build(rows) {
-    if (!rows.length) return '<p>No data</p>';
-    let html = '<table><tbody>';
-    rows.forEach(row => {
-      if (isBlankRow(row)) {
-        html += '<tr class="spacer"><td colspan="' + row.length + '"></td></tr>';
-      } else {
-        html += '<tr>';
-        row.map(clean).forEach(c => html += '<td>' + c + '</td>');
-        html += '</tr>';
+    const upcoming = [];
+    for (const w of weeks) {
+      for (const m of this.cache[w]) {
+        upcoming.push({ week: w, home: m.home, away: m.away });
+        if (upcoming.length >= this.MAX_ROWS) break;
       }
+      if (upcoming.length >= this.MAX_ROWS) break;
+    }
+    let html = '';
+    upcoming.forEach(m => {
+      html += `<div class="upcoming-row">
+        <span class="wk-tag">W${m.week}</span>
+        <span class="matchup">${m.home}<span class="vs">vs</span>${m.away}</span>
+      </div>`;
     });
-    return html + '</tbody></table>';
+    container.innerHTML = html;
+  },
+
+  openModal() {
+    if (!this.cache) return;
+    const weeks = this._sortedWeeks().slice(0, this.MODAL_WEEKS);
+    const container = document.getElementById('upcomingModalContent');
+    if (!weeks.length) {
+      container.innerHTML = '<p class="upcoming-empty">No upcoming matches.</p>';
+    } else {
+      let html = '';
+      weeks.forEach(w => {
+        const matches = this.cache[w] || [];
+        html += `<div class="week-block">
+          <div class="week-block-header">
+            <span class="week-name">Week ${w}</span>
+            <span class="week-count">${matches.length} game${matches.length === 1 ? '' : 's'} left</span>
+          </div>
+          <div class="week-block-matches">`;
+        matches.forEach(m => {
+          html += `<div class="match">${m.home}<span class="vs">vs</span>${m.away}</div>`;
+        });
+        html += `</div></div>`;
+      });
+      container.innerHTML = html;
+    }
+    document.getElementById('upcomingModal').classList.add('open');
+  },
+
+  closeModal() {
+    document.getElementById('upcomingModal').classList.remove('open');
+  },
+
+  closeModalIfBackdrop(event) {
+    if (event.target.id === 'upcomingModal') this.closeModal();
   }
 };
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') UpcomingPanel.closeModal();
+});
 </script>
