@@ -669,14 +669,18 @@ window.ScoringPanel = {
   },
 
   // ===== SUBMIT FLOW =====
-  attemptSubmit() {
-    if (this.mode !== 'league') return;
-    const msg = `Submit final score:<br>
-      <strong style="color:#ffe082;font-size:26px;">
-        ${this.players.p1} ${this.scores.p1} — ${this.scores.p2} ${this.players.p2}
-      </strong>`;
-    this.showConfirm('Submit Score?', msg, () => this.doSubmit());
-  },
+  async attemptSubmit() {
+  if (this.mode !== 'league') return;
+
+  await this.exitFullscreen();
+
+  const msg = `Submit final score:<br>
+    <strong style="color:#ffe082;font-size:26px;">
+      ${this.players.p1} ${this.scores.p1} — ${this.scores.p2} ${this.players.p2}
+    </strong>`;
+
+  this.showConfirm('Submit Score?', msg, () => this.doSubmit());
+},
 
   async doSubmit() {
     this.closeConfirm();
@@ -709,17 +713,25 @@ window.ScoringPanel = {
     }
   },
 
+  async exitFullscreen() {
+  if (document.fullscreenElement) {
+    await document.exitFullscreen();
+  }
+
+},
   // ===== CANCEL FLOW =====
-  cancelMatch() {
-    this.showConfirm(
-      'Cancel Match?',
-      'Score will not be saved. Are you sure you want to cancel?',
-      () => {
-        this.closeConfirm();
-        this.goToStart();
-      }
-    );
-  },
+async cancelMatch() {
+  await this.exitFullscreen();
+
+  this.showConfirm(
+    'Cancel Match?',
+    'Score will not be saved. Are you sure you want to cancel?',
+    () => {
+      this.closeConfirm();
+      this.goToStart();
+    }
+  );
+},
 
   // ===== CONFIRM DIALOG =====
   showConfirm(title, message, onYes) {
@@ -752,6 +764,7 @@ window.ScoringPanel = {
     if (!document.fullscreenElement) el.requestFullscreen();
     else document.exitFullscreen();
   }
+
 };
 
 // Initialize on load
