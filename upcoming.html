@@ -177,7 +177,7 @@ window.UpcomingPanel = {
     upcoming.forEach(m => {
       html += `<div class="upcoming-row">
         <span class="wk-tag">W${m.week}</span>
-        <span class="matchup">${m.home}<span class="vs">vs</span>${m.away}</span>
+        <span class="matchup">${m.away}<span class="vs">@</span>${m.home}</span>
       </div>`;
     });
     container.innerHTML = html;
@@ -199,9 +199,9 @@ window.UpcomingPanel = {
             <span class="week-count">${matches.length} game${matches.length === 1 ? '' : 's'} left</span>
           </div>
           <div class="week-block-matches">`;
-        matches.forEach(m => {
-          html += `<div class="match">${m.home}<span class="vs">vs</span>${m.away}</div>`;
-        });
+          matches.forEach(m => {
+            html += `<div class="match">${m.away}<span class="vs">@</span>${m.home}</div>`;
+          });
         html += `</div></div>`;
       });
       container.innerHTML = html;

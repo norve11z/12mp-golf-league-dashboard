@@ -294,6 +294,25 @@
   :fullscreen .picker-item { font-size: 28px; padding: 20px 30px; }
   :fullscreen #view-start .mode-btn { width: 400px; height: 180px; font-size: 40px; }
   :fullscreen #view-casual-names input { font-size: 32px; padding: 20px 30px; }
+
+  .sb-side-label {
+    font-size: 14px;
+    color: #b5d9a0;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-weight: bold;
+    background: rgba(124, 179, 66, 0.15);
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(124, 179, 66, 0.3);
+  }
+
+  /* Bigger labels in fullscreen */
+  :fullscreen .sb-side-label {
+    font-size: 28px;
+    padding: 8px 24px;
+    letter-spacing: 6px;
+  }
 </style>
 
 <div id="scoreboardModule">
@@ -357,9 +376,10 @@
         <span class="sb-mode-label" id="mode-label"></span>
       </div>
       <div class="sb-board">
-        <div class="sb-side" id="side1">
-          <div class="sb-name" id="name1"></div>
-          <button class="sb-arrow" onclick="ScoringPanel.changeScore(1, 1)">+</button>
+      <div class="sb-side" id="side1">
+        <div class="sb-side-label" id="label1">AWAY</div>
+        <div class="sb-name" id="name1"></div>
+        <button class="sb-arrow" onclick="ScoringPanel.changeScore(1, 1)">+</button>
           <div class="flip-wrap">
             <div class="flip-card"><div class="flip-inner" id="flip1t">
               <div class="flip-face front" id="face1tfront">0</div>
@@ -374,8 +394,9 @@
         </div>
         <div class="sb-vs">VS</div>
         <div class="sb-side" id="side2">
+          <div class="sb-side-label" id="label2">HOME</div>
           <div class="sb-name" id="name2"></div>
-          <button class="sb-arrow" onclick="ScoringPanel.changeScore(2, 1)">+</button>
+          <button class="sb-arrow" onclick="ScoringPanel.changeScore(2, 1)">+</button>  
           <div class="flip-wrap">
             <div class="flip-card"><div class="flip-inner" id="flip2t">
               <div class="flip-face front" id="face2tfront">0</div>
@@ -525,7 +546,7 @@ window.ScoringPanel = {
     let html = '';
     matches.forEach((m, idx) => {
       html += `<button class="matchup-item" onclick="ScoringPanel.selectMatchup(${idx})">
-        ${m.home}<span class="vs">vs</span>${m.away}
+        ${m.away}<span class="vs">@</span>${m.home}
       </button>`;
     });
     document.getElementById('matchup-list').innerHTML = html;
@@ -541,8 +562,8 @@ window.ScoringPanel = {
     const m = this.openMatches[this.matchInfo.week][idx];
     this.matchInfo.home = m.home;
     this.matchInfo.away = m.away;
-    this.players.p1 = m.home;
-    this.players.p2 = m.away;
+    this.players.p1 = m.away;   // side 1 = away (visitor)
+    this.players.p2 = m.home;   // side 2 = home
     this.mode = 'league';
     this.enterScoreboard();
   },
@@ -682,36 +703,38 @@ window.ScoringPanel = {
   this.showConfirm('Submit Score?', msg, () => this.doSubmit());
 },
 
-  async doSubmit() {
-    this.closeConfirm();
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
 
-    try {
-      const data = await apiPost('submitScore', {
-        week: this.matchInfo.week,
-        home: this.matchInfo.home,
-        away: this.matchInfo.away,
-        homeScore: this.scores.p1,
-        awayScore: this.scores.p2
-      });
-      if (!data.ok) throw new Error(data.error || 'Submission failed');
+async doSubmit() {
+  this.closeConfirm();
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
 
-      // Show post-submit view
-      document.getElementById('finalScoreText').innerHTML =
-        `${this.players.p1} <span style="color:#7cb342;">${this.scores.p1}</span>
-         — <span style="color:#7cb342;">${this.scores.p2}</span> ${this.players.p2}`;
-      this.showView('view-submitted');
-      document.getElementById('sb-title').textContent = 'Match Complete';
+  try {
+    const data = await apiPost('submitScore', {
+      week: this.matchInfo.week,
+      home: this.matchInfo.home,
+      away: this.matchInfo.away,
+      homeScore: this.scores.p2,   // side 2 = home
+      awayScore: this.scores.p1    // side 1 = away
+    });
+    if (!data.ok) throw new Error(data.error || 'Submission failed');
 
-      await loadAllData();
-     } catch (e) {
-      alert('Error submitting score: ' + e.message);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Score';
-    }
-  },
+    document.getElementById('finalScoreText').innerHTML =
+      `${this.players.p1} <span style="color:#7cb342;">${this.scores.p1}</span>
+       — <span style="color:#7cb342;">${this.scores.p2}</span> ${this.players.p2}`;
+    this.showView('view-submitted');
+    document.getElementById('sb-title').textContent = 'Match Complete';
+
+    await loadAllData();
+  } catch (e) {
+    alert('Error submitting score: ' + e.message);
+  } finally {
+    // Always restore the button so the next match works
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Score';
+  }
+},
 
   async exitFullscreen() {
   if (document.fullscreenElement) {
