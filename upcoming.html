@@ -117,6 +117,26 @@
   .upcoming-modal::-webkit-scrollbar-track { background: #14301f; border-radius: 4px; }
   .upcoming-modal::-webkit-scrollbar-thumb { background: #4a7a5a; border-radius: 4px; }
   .upcoming-modal::-webkit-scrollbar-thumb:hover { background: #7cb342; }
+
+  .upcoming-row {
+      grid-template-columns: 65px 1fr 100px;
+  }
+  .week-block-matches .match {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .channel-logo {
+    height: 35px;
+    width: 75px;
+    border-radius: 5px;
+  }
+  
+  .channel-logo.locked {
+    filter: drop-shadow(0 0 4px rgba(124, 179, 66, 0.7));
+  }
+
 </style>
 
 <div id="upcomingModule">
@@ -174,10 +194,20 @@ window.UpcomingPanel = {
       if (upcoming.length >= this.MAX_ROWS) break;
     }
     let html = '';
+    const activeWeeks = ChannelLogic.getActiveWeeks();
     upcoming.forEach(m => {
+      const showChannel = activeWeeks.includes(m.week);
+      const ch = showChannel ? ChannelLogic.getChannel(m.week, m.home, m.away) : null;
+      const locked = showChannel && ChannelLogic.isWeekLocked(m.week);
+      const tag = ch
+        ? (CHANNELS[ch]
+            ? `<img class="channel-logo ${locked ? 'locked' : ''}" src="${CHANNELS[ch]}" alt="CH ${ch}">`
+            : `<span class="channel-tag ${locked ? 'locked' : ''}">CH ${ch}</span>`)
+        : `<span class="channel-tag inactive"></span>`;
       html += `<div class="upcoming-row">
         <span class="wk-tag">W${m.week}</span>
         <span class="matchup">${m.away}<span class="vs">@</span>${m.home}</span>
+        ${tag}
       </div>`;
     });
     container.innerHTML = html;
@@ -199,8 +229,20 @@ window.UpcomingPanel = {
             <span class="week-count">${matches.length} game${matches.length === 1 ? '' : 's'} left</span>
           </div>
           <div class="week-block-matches">`;
+          const activeWeeks = ChannelLogic.getActiveWeeks();
+          const showChannel = activeWeeks.includes(w);
+          const locked = showChannel && ChannelLogic.isWeekLocked(w);
           matches.forEach(m => {
-            html += `<div class="match">${m.away}<span class="vs">@</span>${m.home}</div>`;
+            const ch = showChannel ? ChannelLogic.getChannel(w, m.home, m.away) : null;
+            const tag = ch
+              ? (CHANNELS[ch]
+                  ? `<img class="channel-logo ${locked ? 'locked' : ''}" src="${CHANNELS[ch]}" alt="CH ${ch}">`
+                  : `<span class="channel-tag ${locked ? 'locked' : ''}">CH ${ch}</span>`)
+              : '';
+            html += `<div class="match">
+              <span>${m.away}<span class="vs">@</span>${m.home}</span>
+              ${tag}
+            </div>`;
           });
         html += `</div></div>`;
       });

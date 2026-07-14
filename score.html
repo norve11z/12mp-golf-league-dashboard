@@ -36,6 +36,128 @@ window.AppCache = {
   lastFetch: 0
 };
 
+/* ===== CHANNEL CONFIG ===== */
+const CHANNELS = {
+  1: 'logos/espn.jpg',
+  2: 'logos/snbsb.jpg',
+  3: 'logos/sec.jpg',
+  4: 'logos/hulu.jpg',
+  5: 'logos/fsw.jpg',
+  6: 'logos/roku.jpg'  // filler
+};
+
+/* ===== CHANNEL LOGIC ===== */
+const ChannelLogic = {
+  LOCK_KEY: 'channelLocks',
+
+  loadLocks() {
+    try { return JSON.parse(localStorage.getItem(this.LOCK_KEY) || '{}'); }
+    catch { return {}; }
+  },
+  saveLocks(locks) {
+    localStorage.setItem(this.LOCK_KEY, JSON.stringify(locks));
+  },
+
+  // Which weeks are locked? A week is locked if ANY of its scheduled matchups
+  // are NOT in openMatches (meaning at least one has been played).
+  isWeekLocked(week) {
+    const scheduled = this.getScheduledMatchups(week);
+    const open = (AppCache.openMatches && AppCache.openMatches[week]) || [];
+    if (!scheduled.length) return false;
+    return scheduled.length > open.length;
+  },
+
+  // Get all scheduled matchups for a week from openMatches + played
+  // We only have openMatches directly; scheduled = open + played-from-results
+  getScheduledMatchups(week) {
+    const open = ((AppCache.openMatches && AppCache.openMatches[week]) || [])
+      .map(m => ({ home: m.home, away: m.away }));
+    const played = (AppCache.results || [])
+      .filter(r => Number(r.Week) === Number(week))
+      .map(r => ({ home: r.Home, away: r.Away }));
+    return [...open, ...played];
+  },
+
+  // Score a matchup for ranking (higher = better matchup)
+  scoreMatchup(m, standings) {
+    const p1 = standings.find(p => p.name === m.home);
+    const p2 = standings.find(p => p.name === m.away);
+    const r1 = p1 ? p1.rank : 12;
+    const r2 = p2 ? p2.rank : 12;
+    let score = (25 - r1 - r2); // competitiveness base
+
+    // Bubble bonus: only rank 8 or rank 9
+    if (r1 === 8 || r1 === 9) score += 15;
+    if (r2 === 8 || r2 === 9) score += 15;
+
+    // Small random tiebreaker so equal scores don't always order the same
+    score += Math.random() * 0.01;
+    return score;
+  },
+
+  // Compute channels for a single week
+  computeChannelsForWeek(week) {
+    const matchups = ((AppCache.openMatches && AppCache.openMatches[week]) || []);
+    const standings = AppCache.standings || [];
+    const ranked = matchups
+      .map(m => ({ ...m, _score: this.scoreMatchup(m, standings) }))
+      .sort((a, b) => b._score - a._score);
+    const result = {};
+    ranked.forEach((m, idx) => {
+      const key = `${m.home}|${m.away}`;
+      result[key] = idx + 1; // channel 1 = best, 6 = worst
+    });
+    return result;
+  },
+
+  // Public: get channel for a specific matchup in a specific week
+  getChannel(week, home, away) {
+    if (!AppCache.openMatches) return null;
+    const locks = this.loadLocks();
+    const key = `${home}|${away}`;
+
+    // If week is locked and we have stored assignments, use them
+    if (this.isWeekLocked(week) && locks[week]) {
+      return locks[week][key] || null;
+    }
+
+    // If week is locked but we have no stored assignments (localStorage cleared),
+    // compute fresh and save immediately
+    if (this.isWeekLocked(week) && !locks[week]) {
+      const fresh = this.computeChannelsForWeek(week);
+      locks[week] = fresh;
+      this.saveLocks(locks);
+      return fresh[key] || null;
+    }
+
+    // Unlocked week: compute live, don't save
+    const live = this.computeChannelsForWeek(week);
+    return live[key] || null;
+  },
+
+  // Determine which weeks should be actively displayed with channels
+  // = current earliest week with games left + next 2 weeks
+  getActiveWeeks() {
+    if (!AppCache.openMatches) return [];
+    const weeks = Object.keys(AppCache.openMatches).map(Number).sort((a,b) => a-b);
+    return weeks.slice(0, 3);
+  },
+
+  // Called on cache update — auto-lock any week that just had its first game
+  processLocks() {
+    const locks = this.loadLocks();
+    let changed = false;
+    Object.keys(AppCache.openMatches || {}).forEach(w => {
+      const week = Number(w);
+      if (this.isWeekLocked(week) && !locks[week]) {
+        locks[week] = this.computeChannelsForWeek(week);
+        changed = true;
+      }
+    });
+    if (changed) this.saveLocks(locks);
+  }
+};
+
 async function loadAllData() {
   try {
     const data = await apiGet('all');
@@ -45,6 +167,7 @@ async function loadAllData() {
     AppCache.openMatches = data.openMatches;
     AppCache.results = data.results;
     AppCache.lastFetch = Date.now();
+    ChannelLogic.processLocks();
     // Notify all panels to re-render from cache
     if (window.StandingsPanel) StandingsPanel.renderFromCache();
     if (window.UpcomingPanel)  UpcomingPanel.renderFromCache();

@@ -183,7 +183,7 @@
   .sb-arrow {
     background: transparent; border: 1px solid rgba(255,255,255,0.2);
     color: rgba(255,255,255,0.4); width: 90px; height: 60px;
-    cursor: pointer; border-radius: 4px; font-size: 14px; transition: all 0.2s;
+    cursor: pointer; border-radius: 4px; font-size: 25px; transition: all 0.2s;
   }
   .sb-arrow:hover { color: white; border-color: #7cb342; background: rgba(124,179,66,0.2); }
   .flip-wrap { display: flex; gap: 6px; }
@@ -281,7 +281,7 @@
   :fullscreen .flip-card { width: 200px; height: 300px; }
   :fullscreen .flip-face { font-size: 220px; }
   :fullscreen .sb-vs { font-size: 90px; }
-  :fullscreen .sb-arrow { width: 180px; height: 110px; font-size: 20px; }
+  :fullscreen .sb-arrow { width: 180px; height: 110px; font-size: 40px; }
   :fullscreen .sb-side.at-bat::before {
     left: -40px; border-top-width: 24px; border-bottom-width: 24px;
     border-left-width: 36px;
@@ -312,6 +312,82 @@
     font-size: 28px;
     padding: 8px 24px;
     letter-spacing: 6px;
+  }
+
+    /* Channel tag on matchup picker */
+  .matchup-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+  .matchup-item .ch-tag {
+    color: #ffe082;
+    background: rgba(255, 224, 130, 0.1);
+    border: 1px solid rgba(255, 224, 130, 0.4);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+  .matchup-item .ch-tag.locked {
+    color: #7cb342;
+    border-color: rgba(124, 179, 66, 0.6);
+    background: rgba(124, 179, 66, 0.15);
+  }
+
+  /* Channel badge on scoreboard */
+  .sb-channel-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #ffe082;
+    padding: 6px 18px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    position: absolute;
+    top: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+  }
+
+  .sb-channel-badge.visible { display: flex; }
+
+  :fullscreen .sb-channel-badge {
+    font-size: 40px;
+    padding: 14px 40px;
+    letter-spacing: 6px;
+    top: 140px;
+    border-width: 3px;
+  }
+
+
+  .channel-logo {
+    height: 35px;
+    width: 75px;
+    border-radius: 5px;
+  }
+  .channel-logo.locked {
+    filter: drop-shadow(0 0 4px rgba(124, 179, 66, 0.7));
+  }
+
+  /* Scoreboard badge logo */
+  .channel-logo-badge {
+    height: 80px;
+    width: 160px;
+    border-radius: 10px;
+  }
+  :fullscreen .channel-logo-badge {
+    height: 180px;
+    width: 320px;
+    border-radius: 20px;
   }
 </style>
 
@@ -371,6 +447,7 @@
 
     <!-- ===== VIEW: SCOREBOARD ===== -->
     <div class="sb-view" id="view-scoreboard">
+      <div class="sb-channel-badge" id="channelBadge"></div>
       <div class="sb-topbar">
         <button class="sb-btn danger" onclick="ScoringPanel.cancelMatch()">Cancel Match</button>
         <span class="sb-mode-label" id="mode-label"></span>
@@ -543,10 +620,20 @@ window.ScoringPanel = {
     document.getElementById('matchup-title').textContent = `Week ${week}`;
     document.getElementById('sb-title').textContent = `League Game — Week ${week}`;
     const matches = this.openMatches[week] || [];
+    const activeWeeks = ChannelLogic.getActiveWeeks();
+    const showChannel = activeWeeks.includes(week);
+    const locked = showChannel && ChannelLogic.isWeekLocked(week);
     let html = '';
     matches.forEach((m, idx) => {
+      const ch = showChannel ? ChannelLogic.getChannel(week, m.home, m.away) : null;
+      const tag = ch
+        ? (CHANNELS[ch]
+            ? `<img class="channel-logo ${locked ? 'locked' : ''}" src="${CHANNELS[ch]}" alt="CH ${ch}">`
+            : `<span class="ch-tag ${locked ? 'locked' : ''}">CH ${ch}</span>`)
+        : '';
       html += `<button class="matchup-item" onclick="ScoringPanel.selectMatchup(${idx})">
-        ${m.away}<span class="vs">@</span>${m.home}
+        <span>${m.away}<span class="vs">@</span>${m.home}</span>
+        ${tag}
       </button>`;
     });
     document.getElementById('matchup-list').innerHTML = html;
@@ -599,15 +686,33 @@ window.ScoringPanel = {
     // Configure UI for the mode
     const submitBtn = document.getElementById('submitBtn');
     const modeLabel = document.getElementById('mode-label');
+    const badge = document.getElementById('channelBadge');
     if (this.mode === 'league') {
       submitBtn.style.display = 'inline-block';
       modeLabel.textContent = `Week ${this.matchInfo.week} — League`;
       document.getElementById('sb-title').textContent =
         `${this.players.p1} vs ${this.players.p2}`;
+
+      // Channel badge
+      const activeWeeks = ChannelLogic.getActiveWeeks();
+      const showChannel = activeWeeks.includes(this.matchInfo.week);
+      const ch = showChannel ? ChannelLogic.getChannel(this.matchInfo.week, this.matchInfo.home, this.matchInfo.away) : null;
+      const locked = showChannel && ChannelLogic.isWeekLocked(this.matchInfo.week);
+      if (ch) {
+        if (CHANNELS[ch]) {
+          badge.innerHTML = `<img class="channel-logo-badge" src="${CHANNELS[ch]}" alt="CH ${ch}">`;
+        } else {
+          badge.textContent = `Channel ${ch}`;
+        }
+        badge.className = 'sb-channel-badge visible' + (locked ? ' locked' : '');
+      } else {
+        badge.className = 'sb-channel-badge';
+      }
     } else {
       submitBtn.style.display = 'none';
       modeLabel.textContent = 'Casual';
       document.getElementById('sb-title').textContent = 'Casual Game';
+      badge.className = 'sb-channel-badge'; // hide in casual
     }
 
     this.showView('view-scoreboard');
