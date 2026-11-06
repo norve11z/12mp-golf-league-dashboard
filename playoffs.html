@@ -4,522 +4,127 @@
 <title>Minigolf Playoffs</title>
 <style>
 :root {
-  --bg: #1a3d2e;
-  --card: #14301f;
-  --card-light: #21472d;
-  --green: #7cb342;
-  --green-dark: #4a7a5a;
-  --green-light: #b5d9a0;
-  --gold: #ffe082;
-  --muted: #819085;
+  --bg: #1a3d2e; --card: #14301f; --card-light: #21472d;
+  --green: #7cb342; --green-dark: #4a7a5a; --green-light: #b5d9a0;
+  --gold: #ffe082; --muted: #819085;
 }
-
-/* ===== PAGE / 1280 x 720 CANVAS ===== */
 * { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; }
+body { overflow: hidden; background: var(--bg); color: #fff; font-family: "Segoe UI", Arial, sans-serif; }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  overflow: hidden;
-  background: var(--bg);
-  color: #fff;
-  font-family: "Segoe UI", Arial, sans-serif;
-}
-
-.container {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: 12px 18px 14px;
-  overflow: hidden;
-}
-
+.container { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 12px 18px 14px; overflow: hidden; }
 h1 {
-  flex: 0 0 auto;
-  margin: 0 0 10px;
-  padding: 0 150px 8px;
-  border-bottom: 2px solid var(--green);
-  color: var(--gold);
-  font-size: 25px;
-  line-height: 1.2;
-  letter-spacing: 3px;
-  text-align: center;
-  text-transform: uppercase;
-  white-space: nowrap;
+  flex: 0 0 auto; margin: 0 0 10px; padding: 0 150px 8px; border-bottom: 2px solid var(--green);
+  color: var(--gold); font-size: 25px; line-height: 1.2; letter-spacing: 3px;
+  text-align: center; text-transform: uppercase; white-space: nowrap;
 }
+#content { flex: 1 1 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 
-#content {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-/* ===== BRACKET GRID (6 columns now, no WINNER column) ===== */
+/* ===== BRACKET GRID ===== */
 .bracket-wrap {
-  position: relative;
-  flex: 1 1 0;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns:
-    42px
-    minmax(0, 1.18fr)
-    minmax(0, 1.08fr)
-    minmax(0, .94fr)
-    minmax(0, .88fr)
-    minmax(165px, 1fr);
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  column-gap: 0;
-  row-gap: 0;
-  overflow: hidden;
+  position: relative; flex: 1 1 auto; width: 100%; height: 100%;
+  min-width: 0; min-height: 0; display: grid;
+  grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) minmax(180px,.9fr);
+  grid-template-rows: minmax(0,1fr); align-items: stretch; column-gap: 14px; overflow: hidden;
 }
-
-.bracket-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  padding: 8px 2px;
-  color: var(--green-light);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .8px;
-  line-height: 1.25;
-  text-align: center;
-  text-transform: uppercase;
-  white-space: normal;
-}
-
 .round-col {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: space-evenly;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: 12px 8px;
-  gap: 20px;
+  position: relative; z-index: 2; display: flex; flex-direction: column;
+  align-items: stretch; justify-content: space-evenly; width: 100%; height: 100%;
+  min-width: 0; min-height: 0; padding: 10px 6px; gap: 14px;
+}
+.round-col .col-title {
+  flex: 0 0 auto; text-align: center; color: var(--green-light);
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
 }
 
-.round-col.r1 {
-  justify-content: space-around;
-  gap: 22px;
-}
-
-.round-col.r2 {
-  justify-content: space-around;
-  padding: 18px 8px;
-  gap: 26px;
-}
-
-.round-col.r3,
-.round-col.r4 {
-  justify-content: center;
-  padding: 12px 8px;
-  gap: 20px;
-}
-
-.round-col .game-card {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: none;
-}
-
-/* ===== GAME CARDS ===== */
+/* ===== SERIES CARDS ===== */
 .game-card {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  min-width: 0;
-  padding: 6px 7px;
-  border: 1px solid var(--green-dark);
-  border-radius: 5px;
+  position: relative; z-index: 2; width: 100%; min-width: 0; padding: 7px 9px;
+  border: 1px solid var(--green-dark); border-radius: 5px;
   background: linear-gradient(155deg, var(--card-light), var(--card));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
-  transition: border-color .15s, box-shadow .15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.22); transition: border-color .15s, box-shadow .15s;
 }
-
-.game-card.playable {
-  border-color: var(--green);
-  cursor: pointer;
-}
-.game-card.playable:hover {
-  border-color: var(--gold);
-  box-shadow: 0 0 10px rgba(124, 179, 66, .3);
-}
-.game-card.final {
-  border: 2px solid var(--gold);
-}
+.game-card.playable { border-color: var(--green); cursor: pointer; }
+.game-card.playable:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(124,179,66,.3); }
+.game-card.final { border: 2px solid var(--gold); }
 .game-card.tbd { opacity: .55; }
-
-.game-header {
-  margin-bottom: 3px;
-  color: var(--gold);
-  font-size: 9px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: .8px;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.game-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 27px;
-  align-items: center;
-  min-width: 0;
-  min-height: 23px;
-  padding: 3px 0;
-  border-bottom: 1px solid rgba(74, 122, 90, .45);
-}
+.game-header { margin-bottom: 4px; color: var(--gold); font-size: 9px; font-weight: 800; line-height: 1.2; letter-spacing: .8px; text-align: center; text-transform: uppercase; }
+.game-row { display: grid; grid-template-columns: minmax(0,1fr) 30px; align-items: center; min-width: 0; min-height: 24px; padding: 3px 0; border-bottom: 1px solid rgba(74,122,90,.45); }
 .game-row:last-child { border-bottom: none; }
-
-.game-player {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 750;
-  line-height: 1.2;
-  letter-spacing: .1px;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
+.game-player { display: block; min-width: 0; overflow: hidden; color: #fff; font-size: 12px; font-weight: 750; line-height: 1.2; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .game-player.winner { color: var(--gold); }
-.game-player.loser {
-  color: var(--muted);
-  text-decoration: line-through;
-}
-.game-player.tbd {
-  color: #72917a;
-  font-style: italic;
-}
+.game-player.loser { color: var(--muted); text-decoration: line-through; }
+.game-player.tbd { color: #72917a; font-style: italic; }
+.game-score { padding: 3px 2px; border-radius: 3px; background: #0d1f14; color: var(--gold); font-family: "Courier New", monospace; font-size: 13px; font-weight: 900; line-height: 1.1; text-align: center; }
+.status-badge { position: absolute; top: -6px; right: 4px; z-index: 4; padding: 2px 4px; border-radius: 2px; font-size: 7px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+.status-badge.final { background: var(--gold); color: var(--card); }
+.status-badge.pending { background: var(--green); color: #fff; }
+.series-meta { margin-top: 4px; text-align: center; color: var(--green-light); font-size: 8px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
 
-.game-score {
-  padding: 3px 2px;
-  border-radius: 3px;
-  background: #0d1f14;
-  color: var(--gold);
-  font-family: "Courier New", monospace;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1.1;
-  text-align: center;
-}
-.game-score.empty {
-  background: transparent;
-  color: transparent;
-}
-
-.round-col.r1 .game-card { min-height: 58px; }
-.round-col.r2 .game-card { min-height: 54px; }
-.round-col.r3 .game-card { min-height: 50px; }
-.round-col.r4 .game-card { min-height: 50px; }
-.round-col.r4 .game-card + .game-card { margin-top: 8px; }
-
-.status-badge {
-  position: absolute;
-  top: -6px;
-  right: 4px;
-  z-index: 4;
-  padding: 2px 4px;
-  border-radius: 2px;
-  font-size: 7px;
-  font-weight: 800;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-}
-.status-badge.final {
-  background: var(--gold);
-  color: var(--card);
-}
-.status-badge.pending {
-  background: var(--green);
-  color: #fff;
-}
-
-/* ===== CHAMPIONSHIP (col 6 now) ===== */
-.finals-col {
-  grid-column: 6;
-  grid-row: 1 / span 2;
-  position: relative;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  justify-self: stretch;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: 12px 8px;
-}
-
-.champion-box {
-  position: relative;
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 230px;
-  min-width: 0;
-  margin: 0;
-  padding: 24px 9px 14px;
-  border: 2px solid var(--gold);
-  border-radius: 7px;
-  background: linear-gradient(180deg, #244d30, #14301f 65%, #0d1f14);
-  text-align: center;
-  box-shadow: 0 0 18px rgba(255, 224, 130, .2);
-}
-.champion-box.champion-clickable:hover {
-  box-shadow: 0 0 25px rgba(255, 224, 130, .5);
-  transform: scale(1.02);
-  transition: all .2s;
-}
-
-.champion-box::before {
-  content: "CHAMPIONSHIP";
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  border-radius: 3px;
-  background: var(--gold);
-  color: var(--card);
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  white-space: nowrap;
-}
-
-.champion-box .game-card {
-  width: 100%;
-  padding: 7px 6px;
-  border-color: var(--gold);
-  background: rgba(13, 31, 20, .65);
-  box-shadow: none;
-}
-.champion-box .game-header {
-  margin-bottom: 5px;
-  font-size: 10px;
-}
-.champion-box .game-row {
-  grid-template-columns: minmax(0, 1fr) 29px;
-  min-height: 29px;
-}
-.champion-box .game-player { font-size: 11px; }
-.champion-box .game-score { font-size: 14px; }
-
-.champion-box > div:last-child {
-  margin-top: 10px !important;
-  font-size: 11px !important;
-  line-height: 1.4;
-}
+/* ===== CHAMPIONSHIP ===== */
+.finals-col { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 12px 8px; }
+.champion-box { position: relative; flex: 0 0 auto; width: 100%; max-width: 230px; padding: 24px 9px 14px; border: 2px solid var(--gold); border-radius: 7px; background: linear-gradient(180deg,#244d30,#14301f 65%,#0d1f14); text-align: center; box-shadow: 0 0 18px rgba(255,224,130,.2); }
+.champion-box.champion-clickable:hover { box-shadow: 0 0 25px rgba(255,224,130,.5); transform: scale(1.02); transition: all .2s; }
+.champion-box::before { content: "CHAMPIONSHIP"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 4px 8px; border-radius: 3px; background: var(--gold); color: var(--card); font-size: 9px; font-weight: 900; letter-spacing: 1px; white-space: nowrap; }
+.champion-box .game-card { width: 100%; padding: 7px 6px; border-color: var(--gold); background: rgba(13,31,20,.65); box-shadow: none; }
+.champion-box .game-header { margin-bottom: 5px; font-size: 10px; }
+.champion-box .game-row { grid-template-columns: minmax(0,1fr) 32px; min-height: 30px; }
+.champion-box .game-player { font-size: 12px; }
+.champion-box .game-score { font-size: 15px; }
+.champion-box > div:last-child { margin-top: 10px !important; font-size: 11px !important; line-height: 1.4; }
 
 /* ===== LOCK SCREEN ===== */
-.lock-screen {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  gap: 22px;
-}
-.lock-screen p {
-  max-width: 650px;
-  margin: 0;
-  color: var(--green-light);
-  font-size: 22px;
-  line-height: 1.5;
-  letter-spacing: 1px;
-  text-align: center;
-}
-.start-btn {
-  padding: 17px 36px;
-  border: 2px solid var(--green-light);
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--green), #558b2f);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-.start-btn:hover { box-shadow: 0 7px 18px rgba(124, 179, 66, .35); }
+.lock-screen { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; min-height: 0; gap: 22px; }
+.lock-screen p { max-width: 650px; margin: 0; color: var(--green-light); font-size: 22px; line-height: 1.5; letter-spacing: 1px; text-align: center; }
+.start-btn { padding: 17px 36px; border: 2px solid var(--green-light); border-radius: 8px; background: linear-gradient(135deg,var(--green),#558b2f); color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.3); font-size: 24px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; }
+.start-btn:hover { box-shadow: 0 7px 18px rgba(124,179,66,.35); }
 .start-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ===== SCORING OVERLAY ===== */
-.scoring-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  padding: 18px 24px;
-  overflow: hidden;
-  background: var(--bg);
-}
-.scoring-overlay.open { display: flex; }
+/* ===== OVERLAY SHARED ===== */
+.overlay { display: none; position: fixed; inset: 0; z-index: 500; flex-direction: column; padding: 18px 24px; overflow: hidden; background: var(--bg); }
+.overlay.open { display: flex; }
+.overlay-topbar { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid var(--green); }
+.overlay-topbar h2 { margin: 0; color: var(--gold); font-size: 26px; letter-spacing: 2px; text-transform: uppercase; }
+.ov-btn { padding: 9px 16px; border: 0; border-radius: 4px; background: var(--green); color: #fff; font-size: 13px; font-weight: 800; cursor: pointer; }
+.ov-btn:hover { background: #8bc34a; }
+.ov-btn.danger { background: #b71c1c; }
+.ov-btn.danger:hover { background: #d32f2f; }
+.ov-btn.secondary { background: var(--green-dark); }
+.ov-btn.big { font-size: 20px; padding: 16px 40px; letter-spacing: 2px; text-transform: uppercase; }
 
-.scoring-topbar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--green);
-}
-.scoring-topbar h2 {
-  margin: 0;
-  color: var(--gold);
-  font-size: 28px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-.scoring-btn {
-  padding: 9px 16px;
-  border: 0;
-  border-radius: 4px;
-  background: var(--green);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.scoring-btn:hover { background: #8bc34a; }
-.scoring-btn.danger { background: #b71c1c; }
-.scoring-btn.danger:hover { background: #d32f2f; }
-.scoring-btn.secondary { background: var(--green-dark); }
+/* ===== SERIES DETAIL ===== */
+.detail-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; gap: 22px; overflow-y: auto; min-height: 0; }
+.detail-record { display: grid; grid-template-columns: 50px 1fr 90px; align-items: center; width: min(100%,620px); gap: 10px; }
+.detail-record .row { display: contents; }
+.detail-record .seed { color: var(--green-light); font-family: 'Courier New', monospace; font-size: 20px; }
+.detail-record .name { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; grid-column: 2; padding: 10px 0; border-bottom: 2px solid rgba(74,122,90,.4); }
+.detail-record .wins { color: var(--gold); font-family: 'Courier New', monospace; font-size: 30px; font-weight: 900; text-align: right; }
+.detail-record .name.winner, .detail-record .wins.winner { color: var(--gold); }
+.detail-sub { color: var(--green-light); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+.games-log { width: min(100%,620px); display: flex; flex-direction: column; gap: 8px; }
+.log-item { display: grid; grid-template-columns: 80px 1fr 60px; align-items: center; padding: 10px 16px; border: 1px solid var(--green-dark); border-radius: 6px; background: var(--card); }
+.log-item .gno { color: var(--green-light); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.log-item .matchup { color: #fff; font-size: 16px; font-weight: 700; text-transform: uppercase; }
+.log-item .result { color: var(--gold); font-family: 'Courier New', monospace; font-size: 18px; font-weight: 900; text-align: right; }
+.log-empty { color: var(--muted); font-style: italic; text-align: center; padding: 10px; }
+.detail-champion { color: var(--gold); font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
-.scoring-board {
-  display: grid;
-  flex: 1 1 auto;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  justify-items: center;
-  gap: 20px;
-  min-height: 0;
-}
-.scoring-side {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  min-width: 0;
-}
-.scoring-name {
-  max-width: 100%;
-  min-height: 0;
-  overflow: hidden;
-  color: var(--gold);
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-align: center;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.scoring-score {
-  width: min(100%, 250px);
-  min-width: 0;
-  padding: 12px 8px;
-  border: 2px solid var(--green-dark);
-  border-radius: 8px;
-  background: linear-gradient(180deg, #0d1f14, #14301f, #0d1f14);
-  color: var(--gold);
-  font-family: "Courier New", monospace;
-  font-size: 120px;
-  font-weight: 800;
-  line-height: 1;
-  text-align: center;
-}
-.scoring-arrow {
-  width: 110px;
-  height: 58px;
-  border: 2px solid rgba(255, 255, 255, .3);
-  border-radius: 5px;
-  background: transparent;
-  color: rgba(255, 255, 255, .8);
-  font-size: 22px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.scoring-arrow:hover {
-  border-color: var(--green);
-  background: rgba(124, 179, 66, .15);
-  color: #fff;
-}
-.scoring-vs {
-  color: var(--green);
-  font-size: 44px;
-  font-weight: 900;
-}
+/* ===== GAME SCORING ===== */
+.scoring-board { display: grid; flex: 1 1 auto; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; justify-items: center; gap: 20px; min-height: 0; }
+.scoring-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: 100%; min-width: 0; }
+.scoring-name { max-width: 100%; overflow: hidden; color: var(--gold); font-size: 34px; font-weight: 800; letter-spacing: 1px; text-align: center; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.scoring-arrow { width: 110px; height: 58px; border: 2px solid rgba(255,255,255,.3); border-radius: 5px; background: transparent; color: rgba(255,255,255,.8); font-size: 22px; font-weight: 800; cursor: pointer; }
+.scoring-arrow:hover { border-color: var(--green); background: rgba(124,179,66,.15); color: #fff; }
+.scoring-score { width: min(100%,250px); padding: 12px 8px; border: 2px solid var(--green-dark); border-radius: 8px; background: linear-gradient(180deg,#0d1f14,#14301f,#0d1f14); color: var(--gold); font-family: "Courier New", monospace; font-size: 120px; font-weight: 800; line-height: 1; text-align: center; }
+.scoring-vs { color: var(--green); font-size: 44px; font-weight: 900; }
 
-/* ===== CONFIRMATION DIALOG ===== */
-.confirm-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 600;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(0, 0, 0, .8);
-}
+/* ===== CONFIRM DIALOG ===== */
+.confirm-backdrop { display: none; position: fixed; inset: 0; z-index: 600; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.8); }
 .confirm-backdrop.open { display: flex; }
-.confirm-modal {
-  width: min(100%, 440px);
-  padding: 24px;
-  border: 1px solid var(--green);
-  border-radius: 8px;
-  background: #2d5a3d;
-  text-align: center;
-  box-shadow: 0 0 30px rgba(124, 179, 66, .2);
-}
-.confirm-modal h3 {
-  margin: 0 0 12px;
-  color: var(--gold);
-  font-size: 21px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.confirm-modal p {
-  margin: 12px 0;
-  color: #fff;
-  font-size: 16px;
-}
-.confirm-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 18px;
-}
+.confirm-modal { width: min(100%,440px); padding: 24px; border: 1px solid var(--green); border-radius: 8px; background: #2d5a3d; text-align: center; box-shadow: 0 0 30px rgba(124,179,66,.2); }
+.confirm-modal h3 { margin: 0 0 12px; color: var(--gold); font-size: 21px; letter-spacing: 1.5px; text-transform: uppercase; }
+.confirm-modal p { margin: 12px 0; color: #fff; font-size: 16px; }
+.confirm-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
 </style>
 </head>
 <body>
@@ -537,241 +142,204 @@ async function apiGet(action, extra = {}) {
   const res = await fetch(`${API_URL}?${params}`);
   return res.json();
 }
-
 async function apiPost(action, payload = {}) {
   const body = JSON.stringify({ action, token: API_TOKEN, ...payload });
   const res = await fetch(API_URL, { method: 'POST', body });
   return res.json();
 }
 
+function bestOfLabel(round) {
+  if (round === 'R1') return 'Best of 3';
+  if (round === 'SF') return 'Best of 5';
+  return 'Best of 7';
+}
+
 const PlayoffsPage = {
+  state: null,
+
   async load() {
     try {
       const data = await apiGet('getPlayoffs');
       if (!data.ok) throw new Error(data.error);
-      if (!data.locked || !data.seeds.length) {
-        this.renderLockScreen();
-      } else {
-        this.renderBracket(data);
-      }
+      if (!data.locked || !data.seeds.length) this.renderLockScreen();
+      else { this.state = data; this.renderBracket(data); }
     } catch (e) {
-      document.getElementById('content').innerHTML =
-        `<p style="color:#ef5350;">Error: ${e.message}</p>`;
+      document.getElementById('content').innerHTML = `<p style="color:#ef5350;">Error: ${e.message}</p>`;
     }
   },
 
   renderLockScreen() {
     document.getElementById('content').innerHTML = `
       <div class="lock-screen">
-        <p>Playoffs have not started yet.<br>
-           Click below to lock in the top 8 seeds and generate the bracket.</p>
+        <p>Playoffs have not started yet.<br>Click below to lock in the top 8 seeds and generate the bracket.</p>
         <button class="start-btn" onclick="PlayoffsPage.startPlayoffs()">Start Playoffs</button>
-      </div>
-    `;
+      </div>`;
   },
 
   async startPlayoffs() {
     const btn = document.querySelector('.start-btn');
-    btn.disabled = true;
-    btn.textContent = 'Locking...';
+    btn.disabled = true; btn.textContent = 'Locking...';
     try {
       const data = await apiGet('lockPlayoffs');
       if (!data.ok) throw new Error(data.error);
       await this.load();
     } catch (e) {
       alert('Error starting playoffs: ' + e.message);
-      btn.disabled = false;
-      btn.textContent = 'Start Playoffs';
+      btn.disabled = false; btn.textContent = 'Start Playoffs';
     }
   },
 
   renderBracket(data) {
-    const { seeds, games } = data;
+    this.state = data;
     const seedMap = {};
-    seeds.forEach(s => { seedMap[s.name] = s.seed; });
+    data.seeds.forEach(s => { seedMap[s.name] = s.seed; });
+    const get = code => data.series.find(s => s.series === code);
+    const card = code => this.renderCard(get(code), seedMap);
 
-    const getGame = (series, game) =>
-      games.find(g => g.series === series && g.game === game);
+    const f = get('F');
+    const bothSet = f && !f.isTBD;
+    const clickable = bothSet ? `onclick="window.location.href='championship.html'" style="cursor:pointer;"` : '';
+    const hoverClass = bothSet ? ' champion-clickable' : '';
 
-    // Map series codes to sequential game numbers (MCWS style)
-    const gameNum = {
-      'A-W1': 1, 'A-W2': 2, 'A-L1': 5, 'A-W3': 6, 'A-L2': 9, 'A-F': 11,
-      'B-W1': 3, 'B-W2': 4, 'B-L1': 7, 'B-W3': 8, 'B-L2': 10, 'B-F': 12,
-      'F': 13
-    };
-
-    const renderCardWrapped = (g, label) =>
-      this.renderCard(g, seedMap, label);
-
-    const label = (series, gameN) => {
-      if (gameN === 2) return `Game 14 (If Nec)`;  // Bracket A if-necessary
-      return `Game ${gameNum[series]}`;
-    };
-
-    // Determine if "if necessary" games should be shown
-    // A-F game 1: show game 2 only if the WINNERS'-bracket player (player1) lost game 1
-    // Show if-necessary only when the WB player (player1) lost game 1
-    const afG1 = getGame('A-F', 1);
-    const afG2 = getGame('A-F', 2);
-    const showAfG2 = afG1 && afG1.status === 'final'
-      && Number(afG1.score1) < Number(afG1.score2)
-      && afG2 && afG2.player1 !== 'TBD' && afG2.player2 !== 'TBD';
-
-    const bfG1 = getGame('B-F', 1);
-    const bfG2 = getGame('B-F', 2);
-    const showBfG2 = bfG1 && bfG1.status === 'final'
-      && Number(bfG1.score1) < Number(bfG1.score2)
-      && bfG2 && bfG2.player1 !== 'TBD' && bfG2.player2 !== 'TBD';
-
-    const afG2Label = `Game 14 (If Nec)`;
-    const bfG2Label = `Game 15 (If Nec)`;
-
-    let html = `
+    document.getElementById('content').innerHTML = `
       <div class="bracket-wrap">
-
-        <!-- BRACKET 1 LABEL -->
-        <div class="bracket-label" style="grid-column:1; grid-row:1;">BRACKET 1</div>
-
-        <!-- BRACKET 1: R1 -->
-        <div class="round-col r1" style="grid-column:2; grid-row:1;">
-          ${renderCardWrapped(getGame('A-W1', 1), label('A-W1'))}
-          ${renderCardWrapped(getGame('A-W2', 1), label('A-W2'))}
+        <div class="round-col" style="grid-column:1;">
+          <div class="col-title">Round 1 · Best of 3</div>
+          ${card('R1A')}${card('R1C')}${card('R1D')}${card('R1B')}
         </div>
-
-        <!-- BRACKET 1: Winners R2 + Losers R1 -->
-        <div class="round-col r2" style="grid-column:3; grid-row:1;">
-          ${renderCardWrapped(getGame('A-W3', 1), label('A-W3'))}
-          ${renderCardWrapped(getGame('A-L1', 1), label('A-L1'))}
+        <div class="round-col" style="grid-column:2;">
+          <div class="col-title">Semifinals · Best of 5</div>
+          ${card('SF1')}${card('SF2')}
         </div>
-
-        <!-- BRACKET 1: Losers R2 -->
-        <div class="round-col r3" style="grid-column:4; grid-row:1;">
-          ${renderCardWrapped(getGame('A-L2', 1), label('A-L2'))}
+        <div class="finals-col" style="grid-column:3;">
+          <div class="champion-box${hoverClass}" ${clickable}>
+            ${this.renderCard(f, seedMap, true)}
+            <div style="color:#ffe082; font-size:12px; font-weight:bold; letter-spacing:2px; margin-top:8px;">LEAGUE<br>CHAMPION</div>
+            ${bothSet ? '<div style="color:#b5d9a0; font-size:9px; letter-spacing:1px; margin-top:4px;">▸ CLICK TO VIEW SERIES</div>' : ''}
+          </div>
         </div>
-
-        <!-- BRACKET 1: Final (+ conditional if-necessary) -->
-        <div class="round-col r4" style="grid-column:5; grid-row:1;">
-          ${renderCardWrapped(getGame('A-F', 1), label('A-F'))}
-          ${showAfG2 ? renderCardWrapped(afG2, afG2Label) : ''}
-        </div>
-
-        <!-- BRACKET 2 LABEL -->
-        <div class="bracket-label" style="grid-column:1; grid-row:2;">BRACKET 2</div>
-
-        <!-- BRACKET 2: R1 -->
-        <div class="round-col r1" style="grid-column:2; grid-row:2;">
-          ${renderCardWrapped(getGame('B-W1', 1), label('B-W1'))}
-          ${renderCardWrapped(getGame('B-W2', 1), label('B-W2'))}
-        </div>
-
-        <!-- BRACKET 2: Winners R2 + Losers R1 -->
-        <div class="round-col r2" style="grid-column:3; grid-row:2;">
-          ${renderCardWrapped(getGame('B-W3', 1), label('B-W3'))}
-          ${renderCardWrapped(getGame('B-L1', 1), label('B-L1'))}
-        </div>
-
-        <!-- BRACKET 2: Losers R2 -->
-        <div class="round-col r3" style="grid-column:4; grid-row:2;">
-          ${renderCardWrapped(getGame('B-L2', 1), label('B-L2'))}
-        </div>
-
-        <!-- BRACKET 2: Final (+ conditional if-necessary) -->
-        <div class="round-col r4" style="grid-column:5; grid-row:2;">
-          ${renderCardWrapped(getGame('B-F', 1), label('B-F'))}
-          ${showBfG2 ? renderCardWrapped(bfG2, bfG2Label) : ''}
-        </div>
-
-        <!-- CHAMPIONSHIP -->
-        <div class="finals-col">
-          ${(() => {
-            const f = getGame('F', 1);
-            const bothSet = f && f.player1 !== 'TBD' && f.player2 !== 'TBD';
-            const clickable = bothSet ? `onclick="window.location.href='championship.html'" style="cursor:pointer;"` : '';
-            const hoverClass = bothSet ? ' champion-clickable' : '';
-            return `
-              <div class="champion-box${hoverClass}" ${clickable}>
-                ${renderCardWrapped(f, 'Game 13')}
-                <div style="color:#ffe082; font-size:12px; font-weight:bold;
-                            letter-spacing:2px; margin-top:8px;">
-                  NATIONAL<br>CHAMPION
-                </div>
-                ${bothSet ? '<div style="color:#b5d9a0; font-size:9px; letter-spacing:1px; margin-top:4px;">▸ CLICK TO VIEW SERIES</div>' : ''}
-              </div>
-            `;
-          })()}
-        </div>
-
-      </div>
-    `;
-
-    document.getElementById('content').innerHTML = html;
+      </div>`;
   },
 
-  renderCard(game, seedMap, label) {
-    if (!game) return '';
-    const isTBD = game.player1 === 'TBD' || game.player2 === 'TBD';
-    const isFinal = game.status === 'final';
-    const playable = !isTBD && !isFinal;
+  renderCard(s, seedMap, isFinalBox = false) {
+    if (!s) return '';
+    const classes = ['game-card'];
+    if (!s.isTBD && !s.clinched) classes.push('playable');
+    if (s.clinched) classes.push('final');
+    if (s.isTBD) classes.push('tbd');
 
     let p1Class = '', p2Class = '';
-    if (isFinal) {
-      if (game.score1 > game.score2) { p1Class = 'winner'; p2Class = 'loser'; }
+    if (s.clinched) {
+      if (s.winner === s.player1) { p1Class = 'winner'; p2Class = 'loser'; }
       else { p1Class = 'loser'; p2Class = 'winner'; }
     }
-    if (game.player1 === 'TBD') p1Class = 'tbd';
-    if (game.player2 === 'TBD') p2Class = 'tbd';
+    if (s.player1 === 'TBD') p1Class = 'tbd';
+    if (s.player2 === 'TBD') p2Class = 'tbd';
 
-    const seed1 = seedMap[game.player1] ? `<span style="color:#b5d9a0;">${seedMap[game.player1]}</span> ` : '';
-    const seed2 = seedMap[game.player2] ? `<span style="color:#b5d9a0;">${seedMap[game.player2]}</span> ` : '';
+    const seed1 = seedMap[s.player1] ? `<span style="color:#b5d9a0;">${seedMap[s.player1]}</span> ` : '';
+    const seed2 = seedMap[s.player2] ? `<span style="color:#b5d9a0;">${seedMap[s.player2]}</span> ` : '';
 
-    const score1 = isFinal ? game.score1 : '';
-    const score2 = isFinal ? game.score2 : '';
-
-    const classes = ['game-card'];
-    if (playable) classes.push('playable');
-    if (isFinal) classes.push('final');
-    if (isTBD) classes.push('tbd');
-
-    const clickHandler = playable
-      ? `onclick='PlayoffScoring.open(${JSON.stringify(game).replace(/'/g, "\\'")})'`
-      : '';
-
-    const statusHTML = isFinal
-      ? '<span class="status-badge final">Final</span>'
-      : (!isTBD ? '<span class="status-badge pending">Pending</span>' : '');
+    const click = (!s.isTBD && !isFinalBox) ? `onclick="SeriesDetail.open('${s.series}')"` : '';
+    const badge = s.clinched ? '<span class="status-badge final">Final</span>' : (!s.isTBD ? '<span class="status-badge pending">Live</span>' : '');
+    const meta = s.isTBD ? '' : `<div class="series-meta">${bestOfLabel(s.round)} · First to ${s.target}</div>`;
 
     return `
-      <div class="${classes.join(' ')}" ${clickHandler}>
-        ${statusHTML}
-        <div class="game-header">${label}</div>
-        <div class="game-row">
-          <span class="game-player ${p1Class}">${seed1}${game.player1}</span>
-          <span class="game-score ${score1 === '' ? 'empty' : ''}">${score1 === '' ? '0' : score1}</span>
-        </div>
-        <div class="game-row">
-          <span class="game-player ${p2Class}">${seed2}${game.player2}</span>
-          <span class="game-score ${score2 === '' ? 'empty' : ''}">${score2 === '' ? '0' : score2}</span>
-        </div>
-      </div>
-    `;
+      <div class="${classes.join(' ')}" ${click}>
+        ${badge}
+        <div class="game-header">Matchup ${s.matchup}</div>
+        <div class="game-row"><span class="game-player ${p1Class}">${seed1}${s.player1}</span><span class="game-score">${s.isTBD ? '-' : s.wins1}</span></div>
+        <div class="game-row"><span class="game-player ${p2Class}">${seed2}${s.player2}</span><span class="game-score">${s.isTBD ? '-' : s.wins2}</span></div>
+        ${meta}
+      </div>`;
   }
 };
 
-window.PlayoffScoring = {
+// ===== SERIES DETAIL OVERLAY =====
+window.SeriesDetail = {
   current: null,
+
+  open(code) {
+    const s = PlayoffsPage.state.series.find(x => x.series === code);
+    if (!s || s.isTBD) return;
+    this.current = s;
+    this.render();
+    document.getElementById('detailOverlay').classList.add('open');
+  },
+
+  render() {
+    const s = this.current;
+    const seedMap = {};
+    PlayoffsPage.state.seeds.forEach(x => { seedMap[x.name] = x.seed; });
+
+    document.getElementById('detailTitle').textContent = `Matchup ${s.matchup} · ${bestOfLabel(s.round)}`;
+
+    const w1 = s.winner === s.player1 ? 'winner' : '';
+    const w2 = s.winner === s.player2 ? 'winner' : '';
+    const hsNote = s.headStart ? `Higher seed starts ${s.headStart}-0 · First to ${s.target}` : `First to ${s.target}`;
+
+    let logHtml = '';
+    if (s.playedGames.length) {
+      s.playedGames.forEach(g => {
+        logHtml += `<div class="log-item">
+          <span class="gno">Game ${g.gameNo}</span>
+          <span class="matchup">${g.player1} vs ${g.player2}</span>
+          <span class="result">${g.score1}–${g.score2}</span>
+        </div>`;
+      });
+    } else {
+      logHtml = `<div class="log-empty">No games played yet.</div>`;
+    }
+
+    const startBtn = (!s.clinched && s.nextGameNo)
+      ? `<button class="ov-btn big" onclick="GameScoring.open('${s.series}', ${s.nextGameNo})">Start Game ${s.nextGameNo}</button>`
+      : (s.clinched ? `<div class="detail-champion">🏆 ${s.winner} wins the series</div>` : '');
+
+    document.getElementById('detailBody').innerHTML = `
+      <div class="detail-record">
+        <span class="seed">#${seedMap[s.player1] || '?'}</span>
+        <span class="name ${w1}">${s.player1}</span>
+        <span class="wins ${w1}">${s.wins1}</span>
+        <span class="seed">#${seedMap[s.player2] || '?'}</span>
+        <span class="name ${w2}">${s.player2}</span>
+        <span class="wins ${w2}">${s.wins2}</span>
+      </div>
+      <div class="detail-sub">${hsNote}</div>
+      <div class="games-log">${logHtml}</div>
+      ${startBtn}
+    `;
+  },
+
+  close() {
+    document.getElementById('detailOverlay').classList.remove('open');
+    this.current = null;
+  },
+
+  refresh(playoffs) {
+    PlayoffsPage.state = playoffs;
+    PlayoffsPage.renderBracket(playoffs);
+    const updated = playoffs.series.find(x => x.series === this.current.series);
+    if (updated) { this.current = updated; this.render(); }
+  }
+};
+
+// ===== GAME SCORING OVERLAY =====
+window.GameScoring = {
+  series: null, gameNo: null, p1: '', p2: '',
   scores: { p1: 0, p2: 0 },
 
-  open(game) {
-    if (game.player1 === 'TBD' || game.player2 === 'TBD') return;
-    if (game.status === 'final') return;
-    this.current = game;
+  open(seriesCode, gameNo) {
+    const s = PlayoffsPage.state.series.find(x => x.series === seriesCode);
+    if (!s) return;
+    this.series = seriesCode;
+    this.gameNo = gameNo;
+    this.p1 = s.player1;
+    this.p2 = s.player2;
     this.scores = { p1: 0, p2: 0 };
-    document.getElementById('scoringName1').textContent = game.player1;
-    document.getElementById('scoringName2').textContent = game.player2;
+    document.getElementById('scoringName1').textContent = this.p1;
+    document.getElementById('scoringName2').textContent = this.p2;
     document.getElementById('scoringScore1').textContent = '0';
     document.getElementById('scoringScore2').textContent = '0';
-    document.getElementById('scoringTitle').textContent =
-      `${game.series} Game ${game.game}`;
+    document.getElementById('scoringTitle').textContent = `Matchup ${s.matchup} · Game ${gameNo}`;
     document.getElementById('scoringOverlay').classList.add('open');
   },
 
@@ -787,102 +355,96 @@ window.PlayoffScoring = {
       return;
     }
     const msg = `Submit final score:<br>
-      <strong style="color:#ffe082;font-size:26px;">
-        ${this.current.player1} ${this.scores.p1} — ${this.scores.p2} ${this.current.player2}
-      </strong>`;
+      <strong style="color:#ffe082;font-size:26px;">${this.p1} ${this.scores.p1} — ${this.scores.p2} ${this.p2}</strong>`;
     this.showConfirm('Submit Score?', msg, () => this.doSubmit());
   },
 
   doSubmit() {
     this.closeConfirm();
-    const payload = {
-      series: this.current.series,
-      game: this.current.game,
-      score1: this.scores.p1,
-      score2: this.scores.p2
-    };
-    // Close scoring overlay immediately (optimistic)
+    const payload = { series: this.series, gameNo: this.gameNo, score1: this.scores.p1, score2: this.scores.p2 };
     this.close();
-
-    // Fire-and-forget submit, update UI from response when it arrives
     apiPost('submitPlayoffGame', payload)
       .then(data => {
         if (!data.ok) throw new Error(data.error);
-        // Backend already returned updated playoff state — use it directly
         if (data.playoffs) {
-          PlayoffsPage.renderBracket(data.playoffs);
+          if (SeriesDetail.current) SeriesDetail.refresh(data.playoffs);
+          else { PlayoffsPage.state = data.playoffs; PlayoffsPage.renderBracket(data.playoffs); }
         } else {
-          PlayoffsPage.load(); // fallback
+          PlayoffsPage.load();
         }
       })
-      .catch(e => {
-        alert('Error submitting: ' + e.message + '\nPlease refresh the page.');
-      });
+      .catch(e => alert('Error submitting: ' + e.message + '\nPlease refresh the page.'));
   },
 
   cancel() {
-    this.showConfirm(
-      'Cancel Match?',
-      'Score will not be saved. Are you sure?',
-      () => { this.closeConfirm(); this.close(); }
-    );
+    this.showConfirm('Cancel Game?', 'This game score will not be saved. Are you sure?',
+      () => { this.closeConfirm(); this.close(); });
   },
 
   close() {
     document.getElementById('scoringOverlay').classList.remove('open');
-    this.current = null;
   },
 
   showConfirm(title, msg, onYes) {
-    document.getElementById('playoffConfirmTitle').textContent = title;
-    document.getElementById('playoffConfirmMsg').innerHTML = msg;
-    const btn = document.getElementById('playoffConfirmYes');
+    document.getElementById('gameConfirmTitle').textContent = title;
+    document.getElementById('gameConfirmMsg').innerHTML = msg;
+    const btn = document.getElementById('gameConfirmYes');
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
     newBtn.addEventListener('click', onYes);
-    document.getElementById('playoffConfirm').classList.add('open');
+    document.getElementById('gameConfirm').classList.add('open');
   },
 
   closeConfirm() {
-    document.getElementById('playoffConfirm').classList.remove('open');
+    document.getElementById('gameConfirm').classList.remove('open');
   }
 };
 
 PlayoffsPage.load();
 </script>
 
-<!-- ===== SCORING OVERLAY ===== -->
-<div class="scoring-overlay" id="scoringOverlay">
-  <div class="scoring-topbar">
-    <button class="scoring-btn danger" onclick="PlayoffScoring.cancel()">Cancel Match</button>
+<!-- ===== SERIES DETAIL OVERLAY ===== -->
+<div class="overlay" id="detailOverlay">
+  <div class="overlay-topbar">
+    <button class="ov-btn secondary" onclick="SeriesDetail.close()">← Back</button>
+    <h2 id="detailTitle">Series</h2>
+    <span style="width:70px;"></span>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- ===== GAME SCORING OVERLAY ===== -->
+<div class="overlay" id="scoringOverlay">
+  <div class="overlay-topbar">
+    <button class="ov-btn danger" onclick="GameScoring.cancel()">Cancel Game</button>
     <h2 id="scoringTitle">Game</h2>
-    <button class="scoring-btn" onclick="PlayoffScoring.attemptSubmit()">Submit Score</button>
+    <button class="ov-btn" onclick="GameScoring.attemptSubmit()">Submit Score</button>
   </div>
   <div class="scoring-board">
     <div class="scoring-side">
       <div class="scoring-name" id="scoringName1"></div>
-      <button class="scoring-arrow" onclick="PlayoffScoring.changeScore(1, 1)">+</button>
+      <button class="scoring-arrow" onclick="GameScoring.changeScore(1, 1)">+</button>
       <div class="scoring-score" id="scoringScore1">0</div>
-      <button class="scoring-arrow" onclick="PlayoffScoring.changeScore(1, -1)">-</button>
+      <button class="scoring-arrow" onclick="GameScoring.changeScore(1, -1)">-</button>
     </div>
     <div class="scoring-vs">VS</div>
     <div class="scoring-side">
       <div class="scoring-name" id="scoringName2"></div>
-      <button class="scoring-arrow" onclick="PlayoffScoring.changeScore(2, 1)">+</button>
+      <button class="scoring-arrow" onclick="GameScoring.changeScore(2, 1)">+</button>
       <div class="scoring-score" id="scoringScore2">0</div>
-      <button class="scoring-arrow" onclick="PlayoffScoring.changeScore(2, -1)">-</button>
+      <button class="scoring-arrow" onclick="GameScoring.changeScore(2, -1)">-</button>
     </div>
   </div>
 </div>
 
 <!-- ===== CONFIRM DIALOG ===== -->
-<div class="confirm-backdrop" id="playoffConfirm">
+<div class="confirm-backdrop" id="gameConfirm">
   <div class="confirm-modal">
-    <h3 id="playoffConfirmTitle">Confirm</h3>
-    <p id="playoffConfirmMsg"></p>
+    <h3 id="gameConfirmTitle">Confirm</h3>
+    <p id="gameConfirmMsg"></p>
     <div class="confirm-buttons">
-      <button class="scoring-btn secondary" onclick="PlayoffScoring.closeConfirm()">Cancel</button>
-      <button class="scoring-btn" id="playoffConfirmYes">Yes</button>
+      <button class="ov-btn secondary" onclick="GameScoring.closeConfirm()">Cancel</button>
+      <button class="ov-btn" id="gameConfirmYes">Yes</button>
     </div>
   </div>
 </div>
