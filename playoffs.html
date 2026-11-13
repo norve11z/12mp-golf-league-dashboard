@@ -12,10 +12,10 @@
 html, body { width: 100%; height: 100%; margin: 0; }
 body { overflow: hidden; background: var(--bg); color: #fff; font-family: "Segoe UI", Arial, sans-serif; }
 
-.container { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 12px 18px 14px; overflow: hidden; }
+.container { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 10px 16px 12px; overflow: hidden; }
 h1 {
-  flex: 0 0 auto; margin: 0 0 10px; padding: 0 150px 8px; border-bottom: 2px solid var(--green);
-  color: var(--gold); font-size: 25px; line-height: 1.2; letter-spacing: 3px;
+  flex: 0 0 auto; margin: 0 0 8px; padding: 0 60px 8px; border-bottom: 2px solid var(--green);
+  color: var(--gold); font-size: 26px; line-height: 1.2; letter-spacing: 3px;
   text-align: center; text-transform: uppercase; white-space: nowrap;
 }
 #content { flex: 1 1 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -24,41 +24,25 @@ h1 {
 .bracket-wrap {
   position: relative; flex: 1 1 auto; width: 100%; height: 100%;
   min-width: 0; min-height: 0; display: grid;
-grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) auto;
-  grid-template-rows: minmax(0,1fr); align-items: stretch; column-gap: 14px; overflow: hidden;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr) 380px;
+  grid-template-rows: minmax(0,1fr); align-items: stretch; column-gap: 10px; overflow: hidden;
 }
 .round-col {
   position: relative; z-index: 2; display: flex; flex-direction: column;
-  align-items: stretch; justify-content: space-evenly; width: 100%; height: 100%;
-  min-width: 0; min-height: 0; padding: 10px 6px; gap: 14px;
+  align-items: center; justify-content: space-around; width: 100%; height: 100%;
+  min-width: 0; min-height: 0; padding: 4px 4px 6px; gap: 8px;
 }
 .round-col .col-title {
   flex: 0 0 auto; text-align: center; color: var(--green-light);
-  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px;
+  font-size: 14px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px;
 }
 
-.scoring-innings {
-  display: flex; align-items: center; justify-content: center;
-  gap: 20px; padding: 15px 25px;
-  background: #14301f; border: 2px solid var(--green);
-  border-radius: 10px; margin: 15px auto 0;
-  width: fit-content;
-}
-.innings-display {
-  display: flex; align-items: baseline; gap: 10px;
-  color: var(--gold); font-family: 'Courier New', monospace;
-  font-weight: 800; min-width: 110px; justify-content: center;
-}
-.innings-half {
-  font-size: 20px; letter-spacing: 2px;
-  color: var(--green-light); text-transform: uppercase;
-}
-.innings-number { font-size: 36px; }
-
-/* ===== SERIES CARDS ===== */
 .game-card {
-  position: relative; z-index: 2; width: 100%; min-width: 0; padding: 7px 9px;
-  border: 1px solid var(--green-dark); border-radius: 5px;
+  position: relative; z-index: 2; flex: 0 0 auto;
+  width: 100%; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid var(--green-dark); border-radius: 6px;
   background: linear-gradient(155deg, var(--card-light), var(--card));
   box-shadow: 0 2px 6px rgba(0,0,0,.22); transition: border-color .15s, box-shadow .15s;
 }
@@ -66,30 +50,31 @@ grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) auto;
 .game-card.playable:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(124,179,66,.3); }
 .game-card.final { border: 2px solid var(--gold); }
 .game-card.tbd { opacity: .55; }
-.game-header { margin-bottom: 4px; color: var(--gold); font-size: 9px; font-weight: 800; line-height: 1.2; letter-spacing: .8px; text-align: center; text-transform: uppercase; }
-.game-row { display: grid; grid-template-columns: minmax(0,1fr) 30px; align-items: center; min-width: 0; min-height: 24px; padding: 3px 0; border-bottom: 1px solid rgba(74,122,90,.45); }
+.game-header { margin-bottom: 6px; color: var(--gold); font-size: 13px; font-weight: 800; line-height: 1.2; letter-spacing: 1px; text-align: center; text-transform: uppercase; }
+.game-row { display: grid; grid-template-columns: minmax(0,1fr) 42px; align-items: center; min-width: 0; min-height: 34px; padding: 4px 0; border-bottom: 1px solid rgba(74,122,90,.45); }
 .game-row:last-child { border-bottom: none; }
-.game-player { display: block; min-width: 0; overflow: hidden; color: #fff; font-size: 12px; font-weight: 750; line-height: 1.2; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.game-player { display: block; min-width: 0; overflow: hidden; color: #fff; font-size: 17px; font-weight: 750; line-height: 1.2; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .game-player.winner { color: var(--gold); }
 .game-player.loser { color: var(--muted); text-decoration: line-through; }
 .game-player.tbd { color: #72917a; font-style: italic; }
-.game-score { padding: 3px 2px; border-radius: 3px; background: #0d1f14; color: var(--gold); font-family: "Courier New", monospace; font-size: 13px; font-weight: 900; line-height: 1.1; text-align: center; }
-.status-badge { position: absolute; top: -6px; right: 4px; z-index: 4; padding: 2px 4px; border-radius: 2px; font-size: 7px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+.game-score { padding: 4px 2px; border-radius: 3px; background: #0d1f14; color: var(--gold); font-family: "Courier New", monospace; font-size: 19px; font-weight: 900; line-height: 1.1; text-align: center; }
+.status-badge { position: absolute; top: -7px; right: 6px; z-index: 4; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
 .status-badge.final { background: var(--gold); color: var(--card); }
 .status-badge.pending { background: var(--green); color: #fff; }
-.series-meta { margin-top: 4px; text-align: center; color: var(--green-light); font-size: 8px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.series-meta { margin-top: 6px; text-align: center; color: var(--green-light); font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
 
 /* ===== CHAMPIONSHIP ===== */
-.finals-col { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 12px 8px; }
-.champion-box { position: relative; flex: 0 0 auto; width: 300px; padding: 24px 9px 14px; border: 2px solid var(--gold); border-radius: 7px; background: linear-gradient(180deg,#244d30,#14301f 65%,#0d1f14); text-align: center; box-shadow: 0 0 18px rgba(255,224,130,.2); }
-.champion-box.champion-clickable:hover { box-shadow: 0 0 25px rgba(255,224,130,.5); transform: scale(1.02); transition: all .2s; }
-.champion-box::before { content: "CHAMPIONSHIP"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 4px 8px; border-radius: 3px; background: var(--gold); color: var(--card); font-size: 9px; font-weight: 900; letter-spacing: 1px; white-space: nowrap; }
-.champion-box .game-card { width: 100%; padding: 7px 6px; border-color: var(--gold); background: rgba(13,31,20,.65); box-shadow: none; }
-.champion-box .game-header { margin-bottom: 5px; font-size: 13px; }   /* was 10px */
-.champion-box .game-row { grid-template-columns: minmax(0,1fr) 40px; min-height: 38px; }  /* was 32px / 30px */
-.champion-box .game-player { font-size: 15px; }   /* was 12px */
-.champion-box .game-score { font-size: 19px; }    /* was 15px */
-.champion-box > div:last-child { margin-top: 12px !important; font-size: 14px !important; }  /* was 11px */
+.finals-col { position: relative; z-index: 3; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 10px 4px; }
+.champion-box { position: relative; flex: 0 0 auto; width: 100%; padding: 30px 16px 18px; border: 3px solid var(--gold); border-radius: 9px; background: linear-gradient(180deg,#244d30,#14301f 65%,#0d1f14); text-align: center; box-shadow: 0 0 22px rgba(255,224,130,.22); }
+.champion-box.champion-clickable:hover { box-shadow: 0 0 30px rgba(255,224,130,.5); transform: scale(1.02); transition: all .2s; }
+.champion-box::before { content: "CHAMPIONSHIP"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 5px 14px; border-radius: 3px; background: var(--gold); color: var(--card); font-size: 12px; font-weight: 900; letter-spacing: 2px; white-space: nowrap; }
+.champion-box .game-card { flex: 0 0 auto; width: 100%; max-width: none; padding: 12px 12px; border-color: var(--gold); background: rgba(13,31,20,.65); box-shadow: none; }
+.champion-box .game-header { margin-bottom: 8px; font-size: 16px; }
+.champion-box .game-row { grid-template-columns: minmax(0,1fr) 54px; min-height: 48px; }
+.champion-box .game-player { font-size: 21px; }
+.champion-box .game-score { font-size: 26px; }
+.champion-box .series-meta { font-size: 12px; margin-top: 8px; }
+.champion-box > div:last-child { margin-top: 16px !important; font-size: 17px !important; line-height: 1.4; }
 
 /* ===== LOCK SCREEN ===== */
 .lock-screen { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; min-height: 0; gap: 22px; }
@@ -135,6 +120,25 @@ grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) auto;
 .scoring-arrow:hover { border-color: var(--green); background: rgba(124,179,66,.15); color: #fff; }
 .scoring-score { width: min(100%,250px); padding: 12px 8px; border: 2px solid var(--green-dark); border-radius: 8px; background: linear-gradient(180deg,#0d1f14,#14301f,#0d1f14); color: var(--gold); font-family: "Courier New", monospace; font-size: 120px; font-weight: 800; line-height: 1; text-align: center; }
 .scoring-vs { color: var(--green); font-size: 44px; font-weight: 900; }
+
+/* ===== INNINGS ===== */
+.scoring-innings {
+  display: flex; align-items: center; justify-content: center;
+  gap: 20px; padding: 15px 25px;
+  background: #14301f; border: 2px solid var(--green);
+  border-radius: 10px; margin: 15px auto 0;
+  width: fit-content;
+}
+.innings-display {
+  display: flex; align-items: baseline; gap: 10px;
+  color: var(--gold); font-family: 'Courier New', monospace;
+  font-weight: 800; min-width: 110px; justify-content: center;
+}
+.innings-half {
+  font-size: 20px; letter-spacing: 2px;
+  color: var(--green-light); text-transform: uppercase;
+}
+.innings-number { font-size: 36px; }
 
 /* ===== CONFIRM DIALOG ===== */
 .confirm-backdrop { display: none; position: fixed; inset: 0; z-index: 600; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.8); }
