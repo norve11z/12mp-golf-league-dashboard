@@ -70,11 +70,15 @@ h1 { margin: 0; color: var(--gold); font-size: 28px; letter-spacing: 4px; text-t
 .champion-banner .label { color: var(--gold); font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; }
 .champion-banner .name { color: var(--gold); font-size: 48px; font-weight: 900; letter-spacing: 5px; text-transform: uppercase; text-shadow: 0 0 20px rgba(255,224,130,.5); margin: 10px 0; }
 
-.scoring-side.at-bat::before {
-  content: '◀'; position: absolute; left: -30px; top: 50%;
-  transform: translateY(-50%); color: var(--gold); font-size: 28px;
+.scoring-side.at-bat::after {
+  content: '▲ AT BAT';
+  position: absolute; bottom: -34px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold); font-size: 20px; font-weight: 900;
+  letter-spacing: 3px; white-space: nowrap;
+  text-shadow: 0 0 10px rgba(255,224,130,.6);
 }
-.scoring-side { position: relative; }
+.scoring-side { position: relative; padding-bottom: 40px; }
 
 /* ===== GAME SCORING OVERLAY ===== */
 .overlay { display: none; position: fixed; inset: 0; z-index: 500; flex-direction: column; padding: 18px 24px; background: var(--bg); }

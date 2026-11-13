@@ -39,11 +39,15 @@ h1 {
   font-size: 14px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px;
 }
 
-.scoring-side.at-bat::before {
-  content: '◀'; position: absolute; left: -30px; top: 50%;
-  transform: translateY(-50%); color: var(--gold); font-size: 28px;
+.scoring-side.at-bat::after {
+  content: '▲ AT BAT';
+  position: absolute; bottom: -34px; left: 50%;
+  transform: translateX(-50%);
+  color: var(--gold); font-size: 20px; font-weight: 900;
+  letter-spacing: 3px; white-space: nowrap;
+  text-shadow: 0 0 10px rgba(255,224,130,.6);
 }
-.scoring-side { position: relative; }
+.scoring-side { position: relative; padding-bottom: 40px; }
 
 .game-card {
   position: relative; z-index: 2; flex: 0 0 auto;
