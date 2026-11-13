@@ -37,6 +37,23 @@ h1 { margin: 0; color: var(--gold); font-size: 28px; letter-spacing: 4px; text-t
 .player-row.winner .name, .player-row.winner .wins { color: var(--gold); }
 .player-row.winner .wins::after { content: ' 👑'; font-size: 20px; }
 
+.scoring-side-label {
+  font-size: 15px; letter-spacing: 5px; font-weight: 800;
+  color: var(--green-light); text-transform: uppercase;
+  background: rgba(124,179,66,.15); padding: 5px 16px;
+  border: 1px solid rgba(124,179,66,.35); border-radius: 4px;
+}
+
+.home-pick { display: none; position: fixed; inset: 0; z-index: 550; align-items: center; justify-content: center; background: rgba(0,0,0,.85); }
+.home-pick.open { display: flex; }
+.home-pick-modal { padding: 32px 40px; border: 2px solid var(--gold); border-radius: 10px; background: #2d5a3d; text-align: center; box-shadow: 0 0 30px rgba(255,224,130,.25); }
+.home-pick-modal h3 { margin: 0 0 6px; color: var(--gold); font-size: 22px; letter-spacing: 2px; text-transform: uppercase; }
+.home-pick-modal p { margin: 0 0 22px; color: var(--green-light); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+.home-pick-btns { display: flex; gap: 16px; justify-content: center; }
+.home-pick-btn { padding: 22px 30px; min-width: 190px; border: 2px solid var(--green-light); border-radius: 8px; background: linear-gradient(135deg,var(--green),#558b2f); color: #fff; font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+.home-pick-btn:hover { box-shadow: 0 6px 18px rgba(124,179,66,.4); }
+.home-pick-btn small { display: block; margin-top: 6px; font-size: 11px; letter-spacing: 2px; color: var(--green-light); }
+
 .sub-note { color: var(--green-light); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
 .games-log { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 8px; }
 .log-item { display: grid; grid-template-columns: 90px 1fr 70px; align-items: center; padding: 10px 16px; border: 1px solid var(--green-dark); border-radius: 6px; background: var(--card); }
@@ -52,6 +69,12 @@ h1 { margin: 0; color: var(--gold); font-size: 28px; letter-spacing: 4px; text-t
 .champion-banner .crown { font-size: 60px; margin-bottom: 10px; }
 .champion-banner .label { color: var(--gold); font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; }
 .champion-banner .name { color: var(--gold); font-size: 48px; font-weight: 900; letter-spacing: 5px; text-transform: uppercase; text-shadow: 0 0 20px rgba(255,224,130,.5); margin: 10px 0; }
+
+.scoring-side.at-bat::before {
+  content: '◀'; position: absolute; left: -30px; top: 50%;
+  transform: translateY(-50%); color: var(--gold); font-size: 28px;
+}
+.scoring-side { position: relative; }
 
 /* ===== GAME SCORING OVERLAY ===== */
 .overlay { display: none; position: fixed; inset: 0; z-index: 500; flex-direction: column; padding: 18px 24px; background: var(--bg); }
@@ -118,6 +141,7 @@ h1 { margin: 0; color: var(--gold); font-size: 28px; letter-spacing: 4px; text-t
   </div>
   <div class="scoring-board">
     <div class="scoring-side">
+      <div class="scoring-side-label">HOME</div>
       <div class="scoring-name" id="scoringName1"></div>
       <button class="scoring-arrow" onclick="GameScoring.changeScore(1, 1)">+</button>
       <div class="scoring-score" id="scoringScore1">0</div>
@@ -125,6 +149,7 @@ h1 { margin: 0; color: var(--gold); font-size: 28px; letter-spacing: 4px; text-t
     </div>
     <div class="scoring-vs">VS</div>
     <div class="scoring-side">
+      <div class="scoring-side-label">AWAY</div>
       <div class="scoring-name" id="scoringName2"></div>
       <button class="scoring-arrow" onclick="GameScoring.changeScore(2, 1)">+</button>
       <div class="scoring-score" id="scoringScore2">0</div>
@@ -247,7 +272,8 @@ const ChampPage = {
 };
 
 window.GameScoring = {
-  gameNo: null, p1: '', p2: '',
+  gameNo: null,
+  pending: null, home: '', away: '', sheetP1: '',
   scores: { p1: 0, p2: 0 },
   halfIndex: 0,
 
@@ -261,21 +287,47 @@ window.GameScoring = {
     const isTop = (this.halfIndex % 2) === 0;
     document.getElementById('inningNumber').textContent = inningNum;
     document.getElementById('inningHalf').textContent = isTop ? 'TOP' : 'BOT';
-  },
 
+    // Away team (player2 / right side) bats in the top of the inning
+    const sides = document.querySelectorAll('.scoring-side');
+    sides.forEach(s => s.classList.remove('at-bat'));
+    if (sides.length === 2) {
+      sides[isTop ? 1 : 0].classList.add('at-bat');
+    }
+  },
+  // Step 1: ask who is home
   open(gameNo) {
     const s = ChampPage.series;
-    this.gameNo = gameNo;
-    this.p1 = s.player1;
-    this.p2 = s.player2;
-    this.scores = { p1: 0, p2: 0 };
+    this.pending = { gameNo, a: s.player1, b: s.player2 };
+    document.getElementById('homePickTitle').textContent = `Championship · Game ${gameNo}`;
+    const btnA = document.getElementById('homePickA');
+    const btnB = document.getElementById('homePickB');
+    btnA.innerHTML = `${s.player1}<small>home</small>`;
+    btnB.innerHTML = `${s.player2}<small>home</small>`;
+    btnA.onclick = () => this.startWithHome(s.player1);
+    btnB.onclick = () => this.startWithHome(s.player2);
+    document.getElementById('homePick').classList.add('open');
+  },
+
+  // Step 2: launch scoreboard with chosen home team on the left
+  startWithHome(homeName) {
+    document.getElementById('homePick').classList.remove('open');
+    const p = this.pending;
+    const away = homeName === p.a ? p.b : p.a;
+
+    this.gameNo = p.gameNo;
+    this.home = homeName;
+    this.away = away;
+    this.sheetP1 = p.a;
+    this.scores = { p1: 0, p2: 0 };   // p1 = home (left), p2 = away (right)
     this.halfIndex = 0;
     this.updateInningDisplay();
-    document.getElementById('scoringName1').textContent = this.p1;
-    document.getElementById('scoringName2').textContent = this.p2;
+
+    document.getElementById('scoringName1').textContent = homeName;
+    document.getElementById('scoringName2').textContent = away;
     document.getElementById('scoringScore1').textContent = '0';
     document.getElementById('scoringScore2').textContent = '0';
-    document.getElementById('scoringTitle').textContent = `Championship · Game ${gameNo}`;
+    document.getElementById('scoringTitle').textContent = `Championship · Game ${p.gameNo}`;
     document.getElementById('scoringOverlay').classList.add('open');
   },
 
@@ -291,13 +343,20 @@ window.GameScoring = {
       return;
     }
     const msg = `Submit final score:<br>
-      <strong style="color:#ffe082;font-size:26px;">${this.p1} ${this.scores.p1} — ${this.scores.p2} ${this.p2}</strong>`;
+      <strong style="color:#ffe082;font-size:26px;">${this.home} ${this.scores.p1} — ${this.scores.p2} ${this.away}</strong>`;
     this.showConfirm('Submit Score?', msg, () => this.doSubmit());
   },
 
   doSubmit() {
     this.closeConfirm();
-    const payload = { series: 'F', gameNo: this.gameNo, score1: this.scores.p1, score2: this.scores.p2 };
+    // Map home/away scores back to the sheet's player1/player2 order
+    const homeIsSheetP1 = this.home === this.sheetP1;
+    const payload = {
+      series: 'F',
+      gameNo: this.gameNo,
+      score1: homeIsSheetP1 ? this.scores.p1 : this.scores.p2,
+      score2: homeIsSheetP1 ? this.scores.p2 : this.scores.p1
+    };
     this.close();
     apiPost('submitPlayoffGame', payload)
       .then(data => {
@@ -339,5 +398,15 @@ window.GameScoring = {
 
 ChampPage.load();
 </script>
+<div class="home-pick" id="homePick">
+  <div class="home-pick-modal">
+    <h3 id="homePickTitle">Select Home Team</h3>
+    <p>Who is the Home team?</p>
+    <div class="home-pick-btns">
+      <button class="home-pick-btn" id="homePickA"></button>
+      <button class="home-pick-btn" id="homePickB"></button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
